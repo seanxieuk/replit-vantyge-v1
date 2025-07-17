@@ -178,3 +178,107 @@ Provide strategic recommendations for content marketing including key pillars, t
     throw new Error("Failed to generate content strategy: " + (error as Error).message);
   }
 }
+
+export interface PositioningAnalysis {
+  currentPositioning: {
+    overview: string;
+    strengths: string[];
+    weaknesses: string[];
+    marketPosition: string;
+  };
+  recommendations: {
+    id: string;
+    category: string;
+    title: string;
+    description: string;
+    keyPoints: string[];
+    messagingStyle: string;
+    valueProposition: string;
+    differentiators: string[];
+    targetSegments: string[];
+    confidence: number;
+  }[];
+}
+
+export async function analyzePositioning(company: any): Promise<PositioningAnalysis> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `You are a strategic positioning expert. Analyze the company's current positioning and provide comprehensive recommendations. Respond with JSON in this exact format: {
+            "currentPositioning": {
+              "overview": "string - comprehensive overview of current positioning",
+              "strengths": ["strength1", "strength2", "strength3"],
+              "weaknesses": ["weakness1", "weakness2", "weakness3"],
+              "marketPosition": "string - current market position assessment"
+            },
+            "recommendations": [
+              {
+                "id": "string",
+                "category": "string - category like 'Messaging', 'Differentiation', 'Target Market'",
+                "title": "string - short title",
+                "description": "string - detailed description",
+                "keyPoints": ["point1", "point2", "point3"],
+                "messagingStyle": "string - recommended messaging style",
+                "valueProposition": "string - refined value proposition",
+                "differentiators": ["diff1", "diff2", "diff3"],
+                "targetSegments": ["segment1", "segment2"],
+                "confidence": 0.85
+              }
+            ]
+          }`
+        },
+        {
+          role: "user",
+          content: `Analyze positioning for this company:
+          
+Company Information:
+- Name: ${company.name}
+- Industry: ${company.industry || 'Not specified'}
+- Website: ${company.website || 'Not specified'}
+- Description: ${company.description || 'Not specified'}
+- Products/Services: ${company.products?.join(', ') || 'Not specified'}
+- Unique Selling Proposition: ${company.uniqueSellingProposition || 'Not specified'}
+- Target Audience: ${company.idealCustomerProfiles || 'Not specified'}
+- Customer Pain Points: ${company.customerPainPoints?.join(', ') || 'Not specified'}
+
+Provide:
+1. Current positioning analysis with strengths/weaknesses
+2. At least 3 specific positioning recommendations with actionable insights
+3. Refined messaging and value proposition suggestions
+4. Market differentiation strategies
+
+Focus on actionable, strategic recommendations based on the company data provided.`
+        }
+      ],
+      response_format: { type: "json_object" },
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    
+    return {
+      currentPositioning: {
+        overview: result.currentPositioning?.overview || "Analysis unavailable",
+        strengths: Array.isArray(result.currentPositioning?.strengths) ? result.currentPositioning.strengths : [],
+        weaknesses: Array.isArray(result.currentPositioning?.weaknesses) ? result.currentPositioning.weaknesses : [],
+        marketPosition: result.currentPositioning?.marketPosition || "Position unclear"
+      },
+      recommendations: Array.isArray(result.recommendations) ? result.recommendations.map((rec: any, index: number) => ({
+        id: rec.id || `rec-${index}`,
+        category: rec.category || "General",
+        title: rec.title || "Positioning Recommendation",
+        description: rec.description || "",
+        keyPoints: Array.isArray(rec.keyPoints) ? rec.keyPoints : [],
+        messagingStyle: rec.messagingStyle || "",
+        valueProposition: rec.valueProposition || "",
+        differentiators: Array.isArray(rec.differentiators) ? rec.differentiators : [],
+        targetSegments: Array.isArray(rec.targetSegments) ? rec.targetSegments : [],
+        confidence: typeof rec.confidence === 'number' ? rec.confidence : 0.7
+      })) : []
+    };
+  } catch (error) {
+    throw new Error("Failed to analyze positioning: " + (error as Error).message);
+  }
+}

@@ -186,6 +186,20 @@ export default function PositioningWorkshopsPage() {
     retry: false,
   });
 
+  const { data: analysis } = useQuery<{
+    currentPositioning: {
+      overview: string;
+      strengths: string[];
+      weaknesses: string[];
+      marketPosition: string;
+    };
+    recommendations: PositioningRecommendation[];
+  }>({
+    queryKey: ["/api/positioning-analysis"],
+    enabled: !!user,
+    retry: false,
+  });
+
   const generateRecommendationsMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("POST", "/api/positioning-recommendations", {});
@@ -196,6 +210,7 @@ export default function PositioningWorkshopsPage() {
         description: "Positioning recommendations generated successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/positioning-recommendations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/positioning-analysis"] });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -326,6 +341,61 @@ export default function PositioningWorkshopsPage() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Current Positioning Analysis */}
+            {analysis?.currentPositioning && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Current Positioning Analysis
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">Overview</h4>
+                    <p className="text-gray-700">{analysis.currentPositioning.overview}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        Strengths
+                      </h4>
+                      <ul className="space-y-1">
+                        {analysis.currentPositioning.strengths.map((strength, index) => (
+                          <li key={index} className="flex items-start gap-2 text-sm">
+                            <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
+                            {strength}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-red-600" />
+                        Areas for Improvement
+                      </h4>
+                      <ul className="space-y-1">
+                        {analysis.currentPositioning.weaknesses.map((weakness, index) => (
+                          <li key={index} className="flex items-start gap-2 text-sm">
+                            <AlertCircle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
+                            {weakness}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">Market Position</h4>
+                    <p className="text-gray-700">{analysis.currentPositioning.marketPosition}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="recommendations" className="space-y-6">

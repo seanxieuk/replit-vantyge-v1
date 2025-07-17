@@ -8,7 +8,7 @@ import {
   insertContentItemSchema,
   insertContentStrategySchema 
 } from "@shared/schema";
-import { analyzeCompetitor, generateContent, generateContentStrategy } from "./openai";
+import { analyzeCompetitor, generateContent, generateContentStrategy, analyzePositioning } from "./openai";
 import { mozApi } from "./mozApi";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -302,52 +302,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Mock routes for positioning recommendations and blog ideas
+  // Positioning workshops routes
   app.get('/api/positioning-recommendations', isAuthenticated, async (req: any, res) => {
     try {
-      // Mock data for now
-      const recommendations = [
-        {
-          id: "1",
-          category: "Market Positioning",
-          title: "Focus on Innovation Leadership",
-          description: "Position your company as the innovation leader in your industry",
-          keyPoints: ["Cutting-edge technology", "First-to-market solutions", "R&D investment"],
-          messagingStyle: "Bold, forward-thinking, and technical",
-          valueProposition: "We deliver tomorrow's solutions today",
-          differentiators: ["Advanced AI capabilities", "Faster time-to-market", "Superior technical expertise"],
-          targetSegments: ["Early adopters", "Tech-savvy enterprises", "Innovation-focused teams"],
-          confidence: 0.85
-        }
-      ];
-      res.json(recommendations);
-    } catch (error) {
-      console.error("Error fetching positioning recommendations:", error);
-      res.status(500).json({ message: "Failed to fetch positioning recommendations" });
-    }
-  });
-
-  app.post('/api/positioning-recommendations', isAuthenticated, async (req: any, res) => {
-    try {
-      // Mock generating recommendations
-      const recommendations = [
-        {
-          id: "1",
-          category: "Market Positioning",
-          title: "Focus on Innovation Leadership",
-          description: "Position your company as the innovation leader in your industry",
-          keyPoints: ["Cutting-edge technology", "First-to-market solutions", "R&D investment"],
-          messagingStyle: "Bold, forward-thinking, and technical",
-          valueProposition: "We deliver tomorrow's solutions today",
-          differentiators: ["Advanced AI capabilities", "Faster time-to-market", "Superior technical expertise"],
-          targetSegments: ["Early adopters", "Tech-savvy enterprises", "Innovation-focused teams"],
-          confidence: 0.85
-        }
-      ];
-      res.json(recommendations);
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(400).json({ message: "Company profile not found. Please complete your company setup first." });
+      }
+      
+      // Use OpenAI to analyze positioning based on company data
+      const analysis = await analyzePositioning(company);
+      
+      res.json(analysis.recommendations);
     } catch (error) {
       console.error("Error generating positioning recommendations:", error);
       res.status(500).json({ message: "Failed to generate positioning recommendations" });
+    }
+  });
+
+    app.post('/api/positioning-recommendations', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(400).json({ message: "Company profile not found. Please complete your company setup first." });
+      }
+      
+      // Use OpenAI to analyze positioning based on company data
+      const analysis = await analyzePositioning(company);
+      
+      res.json(analysis.recommendations);
+    } catch (error) {
+      console.error("Error generating positioning recommendations:", error);
+      res.status(500).json({ message: "Failed to generate positioning recommendations" });
+    }
+  });
+
+  // New route for comprehensive positioning analysis
+  app.get('/api/positioning-analysis', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(400).json({ message: "Company profile not found. Please complete your company setup first." });
+      }
+      
+      // Use OpenAI to analyze positioning based on company data
+      const analysis = await analyzePositioning(company);
+      
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error generating positioning analysis:", error);
+      res.status(500).json({ message: "Failed to generate positioning analysis" });
     }
   });
 
