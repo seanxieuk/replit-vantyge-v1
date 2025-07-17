@@ -112,7 +112,6 @@ export default function CompanyPage() {
     services: [],
     idealCustomerProfiles: "",
     customerPainPoints: [],
-    targetAudience: "",
   });
 
   const { data: company, isLoading } = useQuery<Company>({
@@ -134,7 +133,6 @@ export default function CompanyPage() {
         services: company.services || [],
         idealCustomerProfiles: company.idealCustomerProfiles || "",
         customerPainPoints: company.customerPainPoints || [],
-        targetAudience: company.targetAudience || "",
       });
     }
   }, [company, isLoading]);
@@ -363,18 +361,7 @@ export default function CompanyPage() {
                 icon={AlertCircle}
               />
               
-              <Separator />
               
-              <div>
-                <Label htmlFor="targetAudience">Target Audience</Label>
-                <Textarea
-                  id="targetAudience"
-                  value={companyForm.targetAudience || ""}
-                  onChange={(e) => setCompanyForm(prev => ({ ...prev, targetAudience: e.target.value }))}
-                  placeholder="Describe your target audience in detail..."
-                  rows={3}
-                />
-              </div>
             </CardContent>
           </Card>
 
