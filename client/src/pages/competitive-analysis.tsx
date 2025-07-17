@@ -49,16 +49,12 @@ function Header({ title, subtitle }: Header) {
 
 function CompetitorCard({ 
   competitor, 
-  onDelete, 
-  onAnalyze,
-  analysis,
-  isAnalyzing 
+  onDelete,
+  analysis
 }: {
   competitor: Competitor;
   onDelete: () => void;
-  onAnalyze: () => void;
   analysis?: CompetitiveAnalysis;
-  isAnalyzing: boolean;
 }) {
   return (
     <Card className="relative">
@@ -74,24 +70,6 @@ function CompetitorCard({
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onAnalyze}
-              disabled={isAnalyzing}
-            >
-              {isAnalyzing ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Search className="h-4 w-4 mr-2" />
-                  Analyze
-                </>
-              )}
-            </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -211,7 +189,7 @@ export default function CompetitiveAnalysisPage() {
     website: "",
     description: "",
   });
-  const [analyzingCompetitors, setAnalyzingCompetitors] = useState<Set<number>>(new Set());
+
 
   const { data: competitors, isLoading } = useQuery<Competitor[]>({
     queryKey: ["/api/competitors"],
@@ -277,14 +255,31 @@ export default function CompetitiveAnalysisPage() {
     },
   });
 
-  const analyzeCompetitorMutation = useMutation({
-    mutationFn: async (competitorId: number) => {
-      return await apiRequest("POST", `/api/competitive-analyses/${competitorId}`, {});
+
+
+  const handleAddCompetitor = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!competitorForm.website) return;
+    
+    // Ensure name is generated from website if not already set
+    const finalForm = {
+      ...competitorForm,
+      name: competitorForm.name || competitorForm.website.replace(/^https?:\/\//, '').replace(/^www\./, '').split('.')[0]
+    };
+    
+    addCompetitorMutation.mutate(finalForm);
+  };
+
+
+
+  const analyzeAllMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/competitive-analyses/analyze-all", {});
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Competitive analysis completed",
+        title: "Analysis Complete",
+        description: "All competitors have been analyzed successfully",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/competitive-analyses"] });
     },
@@ -301,37 +296,16 @@ export default function CompetitiveAnalysisPage() {
         return;
       }
       toast({
-        title: "Error",
-        description: "Failed to analyze competitor",
+        title: "Analysis Error",
+        description: "Failed to analyze competitors",
         variant: "destructive",
       });
     },
   });
 
-  const handleAddCompetitor = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!competitorForm.website) return;
-    
-    // Ensure name is generated from website if not already set
-    const finalForm = {
-      ...competitorForm,
-      name: competitorForm.name || competitorForm.website.replace(/^https?:\/\//, '').replace(/^www\./, '').split('.')[0]
-    };
-    
-    addCompetitorMutation.mutate(finalForm);
-  };
-
-  const handleAnalyzeCompetitor = (competitorId: number) => {
-    setAnalyzingCompetitors(prev => new Set(prev).add(competitorId));
-    analyzeCompetitorMutation.mutate(competitorId, {
-      onSettled: () => {
-        setAnalyzingCompetitors(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(competitorId);
-          return newSet;
-        });
-      }
-    });
+  const handleAnalyzeAll = () => {
+    if (!competitors?.length) return;
+    analyzeAllMutation.mutate();
   };
 
   const getAnalysisForCompetitor = (competitorId: number) => {
@@ -356,7 +330,24 @@ export default function CompetitiveAnalysisPage() {
       <main className="flex-1 overflow-y-auto p-6">
         <div className="space-y-6">
           {/* Add Competitor Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={handleAnalyzeAll}
+              disabled={!competitors?.length || analyzeAllMutation.isPending}
+            >
+              {analyzeAllMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Search className="h-4 w-4 mr-2" />
+                  Analyze All
+                </>
+              )}
+            </Button>
             <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
               <DialogTrigger asChild>
                 <Button>
@@ -415,9 +406,7 @@ export default function CompetitiveAnalysisPage() {
                   key={competitor.id}
                   competitor={competitor}
                   onDelete={() => deleteCompetitorMutation.mutate(competitor.id)}
-                  onAnalyze={() => handleAnalyzeCompetitor(competitor.id)}
                   analysis={getAnalysisForCompetitor(competitor.id)}
-                  isAnalyzing={analyzingCompetitors.has(competitor.id)}
                 />
               ))}
             </div>

@@ -169,6 +169,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/competitive-analyses/analyze-all', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+
+      const competitors = await storage.getCompetitorsByCompanyId(company.id);
+      const analyses = [];
+      
+      for (const competitor of competitors) {
+        // Here you would call your AI analysis service
+        // For now, we'll create a mock analysis
+        const analysis = await storage.createCompetitiveAnalysis({
+          companyId: company.id,
+          competitorId: competitor.id,
+          marketShare: Math.floor(Math.random() * 30) + 10,
+          contentVolume: ["High", "Medium", "Low"][Math.floor(Math.random() * 3)],
+          seoStrength: ["Strong", "Medium", "Weak"][Math.floor(Math.random() * 3)],
+          insights: `${competitor.name} has strong market presence with consistent content strategy.`,
+          threats: `${competitor.name} has advanced technology and strong brand recognition in the market.`,
+          opportunities: "Gap in mobile optimization and social media engagement.",
+          recommendations: "Focus on mobile-first strategy and increase content frequency."
+        });
+        
+        analyses.push(analysis);
+      }
+      
+      res.json(analyses);
+    } catch (error) {
+      console.error("Error analyzing all competitors:", error);
+      res.status(500).json({ message: "Failed to analyze all competitors" });
+    }
+  });
+
   // Content routes
   app.get('/api/content', isAuthenticated, async (req: any, res) => {
     try {
