@@ -5,6 +5,7 @@ import {
   competitiveAnalyses,
   contentItems,
   contentStrategies,
+  rejectedBlogIdeas,
   type User,
   type UpsertUser,
   type Company,
@@ -17,6 +18,8 @@ import {
   type InsertContentStrategy,
   type CompetitiveAnalysis,
   type InsertCompetitiveAnalysis,
+  type RejectedBlogIdea,
+  type InsertRejectedBlogIdea,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
@@ -59,6 +62,10 @@ export interface IStorage {
   // Competitive landscape analysis results
   getCompetitiveLandscapeAnalysis(companyId: number): Promise<any | null>;
   saveCompetitiveLandscapeAnalysis(companyId: number, analysis: any): Promise<any>;
+  
+  // Rejected blog ideas operations
+  rejectBlogIdea(companyId: number, idea: any, rejectionReason: string): Promise<RejectedBlogIdea>;
+  getRejectedBlogIdeas(companyId: number): Promise<RejectedBlogIdea[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -245,6 +252,28 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return analysis;
+  }
+
+  // Rejected blog ideas operations
+  async rejectBlogIdea(companyId: number, idea: any, rejectionReason: string): Promise<RejectedBlogIdea> {
+    const [rejectedIdea] = await db
+      .insert(rejectedBlogIdeas)
+      .values({
+        companyId,
+        ideaData: idea,
+        rejectionReason,
+      })
+      .returning();
+    return rejectedIdea;
+  }
+
+  async getRejectedBlogIdeas(companyId: number): Promise<RejectedBlogIdea[]> {
+    const ideas = await db
+      .select()
+      .from(rejectedBlogIdeas)
+      .where(eq(rejectedBlogIdeas.companyId, companyId))
+      .orderBy(rejectedBlogIdeas.rejectedAt);
+    return ideas;
   }
 }
 

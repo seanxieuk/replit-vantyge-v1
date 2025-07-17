@@ -6,7 +6,8 @@ import {
   insertCompanySchema, 
   insertCompetitorSchema, 
   insertContentItemSchema,
-  insertContentStrategySchema 
+  insertContentStrategySchema,
+  insertRejectedBlogIdeaSchema
 } from "@shared/schema";
 import { analyzeCompetitor, generateContent, generateContentStrategy, analyzePositioning, analyzeCompetitiveLandscape, generateBlogIdeas, generateFullArticle } from "./openai";
 import { mozApi } from "./mozApi";
@@ -460,9 +461,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get optional data to enhance topic generation
       const competitors = await storage.getCompetitorsByCompanyId(company.id);
       const positioningRecommendations = await storage.getPositioningRecommendations(company.id);
+      const rejectedIdeas = await storage.getRejectedBlogIdeas(company.id);
       
-      // Generate AI-powered blog ideas
-      const blogIdeas = await generateBlogIdeas(company, competitors, positioningRecommendations);
+      // Generate AI-powered blog ideas with rejected ideas context
+      const blogIdeas = await generateBlogIdeas(company, competitors, positioningRecommendations, rejectedIdeas);
       
       res.json(blogIdeas);
     } catch (error) {
@@ -498,6 +500,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating article:", error);
       res.status(500).json({ message: "Failed to generate article" });
+    }
+  });
+
+  // Reject blog idea endpoint
+  app.post('/api/reject-blog-idea', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { idea, rejectionReason } = req.body;
+      
+      if (!idea || !rejectionReason) {
+        return res.status(400).json({ message: "Blog idea and rejection reason are required" });
+      }
+
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(400).json({ message: "Company profile not found" });
+      }
+
+      // Store the rejected idea
+      const rejectedIdea = await storage.rejectBlogIdea(company.id, idea, rejectionReason);
+      
+      res.json({ message: "Blog idea rejected successfully", rejectedIdea });
+    } catch (error) {
+      console.error("Error rejecting blog idea:", error);
+      res.status(500).json({ message: "Failed to reject blog idea" });
+    }
+  });
+
+  // Get rejected blog ideas endpoint
+  app.get('/api/rejected-blog-ideas', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(400).json({ message: "Company profile not found" });
+      }
+
+      const rejectedIdeas = await storage.getRejectedBlogIdeas(company.id);
+      
+      res.json(rejectedIdeas);
+    } catch (error) {
+      console.error("Error fetching rejected blog ideas:", error);
+      res.status(500).json({ message: "Failed to fetch rejected blog ideas" });
     }
   });
 

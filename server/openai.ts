@@ -339,7 +339,8 @@ export interface GeneratedArticle {
 export async function generateBlogIdeas(
   company: any,
   competitors: any[] = [],
-  positioningRecommendations: any[] = []
+  positioningRecommendations: any[] = [],
+  rejectedIdeas: any[] = []
 ): Promise<BlogIdea[]> {
   try {
     const competitorContext = competitors.length > 0 
@@ -350,6 +351,12 @@ export async function generateBlogIdeas(
       ? `\n\nPositioning Insights:\n${positioningRecommendations.map(rec => `- ${rec.title}: ${rec.description}`).join('\n')}`
       : '';
 
+    const rejectedContext = rejectedIdeas.length > 0
+      ? `\n\nPreviously Rejected Ideas (avoid similar topics and address these concerns):\n${rejectedIdeas.map(rejected => 
+          `- Topic: ${rejected.ideaData?.title || 'Unknown'}\n  Reason: ${rejected.rejectionReason}\n  Date: ${new Date(rejected.rejectedAt).toLocaleDateString()}`
+        ).join('\n')}`
+      : '';
+
     const prompt = `You are a content marketing expert. Generate 5 highly relevant blog topic ideas for the following company:
 
 Company: ${company.name}
@@ -357,7 +364,7 @@ Industry: ${company.industry || 'Not specified'}
 Description: ${company.description || 'No description provided'}
 Target Market: ${company.targetMarket || 'Not specified'}
 Value Proposition: ${company.valueProposition || 'Not specified'}
-${competitorContext}${positioningContext}
+${competitorContext}${positioningContext}${rejectedContext}
 
 Generate 5 blog topic ideas that are:
 1. Highly relevant to the company's industry and target market
@@ -365,6 +372,7 @@ Generate 5 blog topic ideas that are:
 3. Differentiated from competitors (if competitor data is available)
 4. SEO-optimized and search-friendly
 5. Valuable to their target audience
+6. Learn from previously rejected ideas to improve relevance
 
 For each idea, provide a rationale explaining why this topic is specifically relevant to this company.
 

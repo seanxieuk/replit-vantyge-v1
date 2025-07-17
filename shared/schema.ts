@@ -116,6 +116,15 @@ export const contentStrategies = pgTable("content_strategies", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Rejected blog ideas
+export const rejectedBlogIdeas = pgTable("rejected_blog_ideas", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  ideaData: jsonb("idea_data").notNull(), // Store the original BlogIdea object
+  rejectionReason: text("rejection_reason").notNull(),
+  rejectedAt: timestamp("rejected_at").defaultNow(),
+});
+
 // Competitive landscape analysis results
 export const competitiveLandscapeAnalyses = pgTable("competitive_landscape_analyses", {
   id: serial("id").primaryKey(),
@@ -176,3 +185,10 @@ export const insertCompetitiveLandscapeAnalysisSchema = createInsertSchema(compe
   createdAt: true,
 });
 export type InsertCompetitiveLandscapeAnalysis = z.infer<typeof insertCompetitiveLandscapeAnalysisSchema>;
+
+export const insertRejectedBlogIdeaSchema = createInsertSchema(rejectedBlogIdeas).omit({
+  id: true,
+  rejectedAt: true,
+});
+export type InsertRejectedBlogIdea = z.infer<typeof insertRejectedBlogIdeaSchema>;
+export type RejectedBlogIdea = typeof rejectedBlogIdeas.$inferSelect;
