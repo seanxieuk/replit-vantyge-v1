@@ -49,7 +49,7 @@ export const companies = pgTable("companies", {
   uniqueSellingProposition: text("unique_selling_proposition"),
   products: text("products").array(),
   services: text("services").array(),
-  idealCustomerProfiles: text("ideal_customer_profiles").array(),
+  idealCustomerProfiles: text("ideal_customer_profiles"),
   customerPainPoints: text("customer_pain_points").array(),
   targetAudience: text("target_audience"),
   createdAt: timestamp("created_at").defaultNow(),

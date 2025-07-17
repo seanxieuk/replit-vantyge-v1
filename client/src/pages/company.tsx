@@ -110,7 +110,7 @@ export default function CompanyPage() {
     uniqueSellingProposition: "",
     products: [],
     services: [],
-    idealCustomerProfiles: [],
+    idealCustomerProfiles: "",
     customerPainPoints: [],
     targetAudience: "",
   });
@@ -132,7 +132,7 @@ export default function CompanyPage() {
         uniqueSellingProposition: company.uniqueSellingProposition || "",
         products: company.products || [],
         services: company.services || [],
-        idealCustomerProfiles: company.idealCustomerProfiles || [],
+        idealCustomerProfiles: company.idealCustomerProfiles || "",
         customerPainPoints: company.customerPainPoints || [],
         targetAudience: company.targetAudience || "",
       });
@@ -339,13 +339,19 @@ export default function CompanyPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <MultiInputField
-                label="Ideal Customer Profiles (ICPs)"
-                values={companyForm.idealCustomerProfiles || []}
-                onChange={(values) => setCompanyForm(prev => ({ ...prev, idealCustomerProfiles: values }))}
-                placeholder="Add an ideal customer profile"
-                icon={Users}
-              />
+              <div>
+                <Label htmlFor="idealCustomerProfiles" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Ideal Customer Profiles (ICPs)
+                </Label>
+                <Textarea
+                  id="idealCustomerProfiles"
+                  value={companyForm.idealCustomerProfiles || ""}
+                  onChange={(e) => setCompanyForm(prev => ({ ...prev, idealCustomerProfiles: e.target.value }))}
+                  placeholder="Describe your ideal customer's organization type, company type, company size, revenue range, job titles, job functions, seniority level, decision-making process, and key characteristics..."
+                  rows={4}
+                />
+              </div>
               
               <Separator />
               
