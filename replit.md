@@ -10,6 +10,7 @@ Preferred communication style: Simple, everyday language.
 Landing page preference: Streamlined login-only experience for existing users only, with sign-up option removed.
 Authentication approach: Restrict access to existing users, direct contact for new access requests.
 Primary button color: #409452 (green) used consistently across all pages and components.
+Layout preference: Maximum content width of 1028px for optimal viewing on large monitors while maintaining mobile responsiveness.
 
 ## System Architecture
 

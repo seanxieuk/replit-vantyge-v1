@@ -199,7 +199,7 @@ export default function CompanyPage() {
       />
 
       <main className="flex-1 overflow-y-auto p-6">
-        <form onSubmit={handleSaveCompany} className="space-y-6">
+        <form onSubmit={handleSaveCompany} className="max-w-[1028px] mx-auto space-y-6">
           {/* Basic Information */}
           <Card>
             <CardHeader>

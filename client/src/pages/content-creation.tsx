@@ -122,7 +122,8 @@ export default function ContentCreationPage() {
       />
 
       <main className="flex-1 overflow-y-auto p-6">
-        <Card>
+        <div className="max-w-[1028px] mx-auto">
+          <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Content Generator</CardTitle>
             <div className="flex space-x-3">
@@ -287,6 +288,7 @@ export default function ContentCreationPage() {
             </form>
           </CardContent>
         </Card>
+        </div>
       </main>
     </>
   );

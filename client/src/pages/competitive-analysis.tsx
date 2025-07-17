@@ -371,7 +371,7 @@ export default function CompetitiveAnalysisPage() {
       />
 
       <main className="flex-1 overflow-y-auto p-6">
-        <div className="space-y-6">
+        <div className="max-w-[1028px] mx-auto space-y-6">
           {/* Add Competitor Button */}
           <div className="flex justify-end gap-2">
             <Button
