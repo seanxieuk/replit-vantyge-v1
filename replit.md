@@ -7,6 +7,7 @@ MarketingAI is a full-stack AI-powered marketing intelligence platform that help
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Landing page preference: Simple sign-in/sign-up interface instead of marketing-heavy landing page.
 
 ## System Architecture
 
