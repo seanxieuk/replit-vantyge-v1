@@ -35,18 +35,27 @@ export interface ContentStrategyResult {
 export async function analyzeCompetitor(
   competitorName: string,
   competitorWebsite: string,
-  companyContext: string
-): Promise<CompetitorAnalysisResult> {
+  mozData: {
+    domainAuthority: number;
+    pageAuthority: number;
+    spamScore: number;
+    linkingDomains: number;
+    totalLinks: number;
+    seoStrength: string;
+  }
+): Promise<{
+  insights: string;
+  threats: string;
+  opportunities: string;
+  recommendations: string;
+}> {
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: `You are a competitive intelligence expert. Analyze the given competitor and provide insights for marketing strategy. Respond with JSON in this exact format: {
-            "marketShare": number (0-100),
-            "contentVolume": "low" | "medium" | "high",
-            "seoStrength": "weak" | "moderate" | "strong",
+          content: `You are a competitive intelligence expert. Analyze the given competitor using real SEO data from Moz API. Provide insights for marketing strategy. Respond with JSON in this exact format: {
             "insights": "string",
             "threats": "string", 
             "opportunities": "string",
@@ -55,7 +64,17 @@ export async function analyzeCompetitor(
         },
         {
           role: "user",
-          content: `Analyze competitor: ${competitorName} (${competitorWebsite}) in context of our company: ${companyContext}. Provide strategic marketing insights and recommendations.`
+          content: `Analyze competitor: ${competitorName} (${competitorWebsite}) using real Moz SEO data:
+          
+          SEO Metrics:
+          - Domain Authority: ${mozData.domainAuthority}/100
+          - Page Authority: ${mozData.pageAuthority}/100
+          - Spam Score: ${mozData.spamScore}/100
+          - Linking Domains: ${mozData.linkingDomains}
+          - Total Links: ${mozData.totalLinks}
+          - SEO Strength: ${mozData.seoStrength}
+          
+          Based on these authentic SEO metrics, provide strategic marketing insights and actionable recommendations.`
         }
       ],
       response_format: { type: "json_object" },
@@ -63,9 +82,6 @@ export async function analyzeCompetitor(
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
     return {
-      marketShare: Math.max(0, Math.min(100, result.marketShare || 0)),
-      contentVolume: ["low", "medium", "high"].includes(result.contentVolume) ? result.contentVolume : "medium",
-      seoStrength: ["weak", "moderate", "strong"].includes(result.seoStrength) ? result.seoStrength : "moderate",
       insights: result.insights || "",
       threats: result.threats || "",
       opportunities: result.opportunities || "",

@@ -25,7 +25,11 @@ import {
   BarChart3,
   Lightbulb,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Shield,
+  FileText,
+  Link as LinkIcon,
+  Loader2
 } from "lucide-react";
 import type { Competitor, InsertCompetitor, CompetitiveAnalysis } from "@shared/schema";
 
@@ -110,23 +114,40 @@ function CompetitorCard({
               </Badge>
             </div>
             
-            {/* Market Share */}
-            {analysis.marketShare && (
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium">Market Share:</span>
-                <span className="text-sm">{analysis.marketShare}%</span>
-              </div>
-            )}
-            
-            {/* Content Volume */}
-            {analysis.contentVolume && (
-              <div className="flex items-center gap-2">
-                <Eye className="h-4 w-4 text-purple-600" />
-                <span className="text-sm font-medium">Content Volume:</span>
-                <span className="text-sm">{analysis.contentVolume}</span>
-              </div>
-            )}
+            {/* SEO Metrics */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              {analysis.domainAuthority !== undefined && (
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium">Domain Authority:</span>
+                  <span className="text-sm font-bold">{analysis.domainAuthority}/100</span>
+                </div>
+              )}
+              
+              {analysis.pageAuthority !== undefined && (
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium">Page Authority:</span>
+                  <span className="text-sm font-bold">{analysis.pageAuthority}/100</span>
+                </div>
+              )}
+              
+              {analysis.spamScore !== undefined && (
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                  <span className="text-sm font-medium">Spam Score:</span>
+                  <span className="text-sm font-bold">{analysis.spamScore}/100</span>
+                </div>
+              )}
+              
+              {analysis.linkingDomains !== undefined && (
+                <div className="flex items-center gap-2">
+                  <LinkIcon className="h-4 w-4 text-purple-600" />
+                  <span className="text-sm font-medium">Linking Domains:</span>
+                  <span className="text-sm font-bold">{analysis.linkingDomains.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
             
             {/* Insights */}
             {analysis.insights && (

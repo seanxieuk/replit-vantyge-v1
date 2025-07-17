@@ -9,6 +9,7 @@ import {
   insertContentStrategySchema 
 } from "@shared/schema";
 import { analyzeCompetitor, generateContent, generateContentStrategy } from "./openai";
+import { mozApi } from "./mozApi";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -148,18 +149,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company not found" });
       }
       
-      // Here you would call your AI analysis service
-      // For now, we'll create a mock analysis
+      if (!competitorId || isNaN(competitorId)) {
+        return res.status(400).json({ message: "Invalid competitor ID" });
+      }
+      
+      // Get competitor details
+      const competitors = await storage.getCompetitorsByCompanyId(company.id);
+      const competitor = competitors.find(c => c.id === competitorId);
+      
+      if (!competitor) {
+        return res.status(404).json({ message: "Competitor not found" });
+      }
+      
+      // Get real SEO data from Moz API
+      const mozData = await mozApi.analyzeCompetitor(competitor.website || '');
+      
+      // Generate AI insights using OpenAI
+      const aiInsights = await analyzeCompetitor(competitor.name, competitor.website || '', mozData);
+      
       const analysis = await storage.createCompetitiveAnalysis({
         companyId: company.id,
         competitorId: competitorId,
-        marketShare: Math.floor(Math.random() * 30) + 10,
-        contentVolume: ["High", "Medium", "Low"][Math.floor(Math.random() * 3)],
-        seoStrength: ["Strong", "Medium", "Weak"][Math.floor(Math.random() * 3)],
-        insights: "This competitor has strong market presence with consistent content strategy.",
-        threats: "They have advanced technology and strong brand recognition in the market.",
-        opportunities: "Gap in mobile optimization and social media engagement.",
-        recommendations: "Focus on mobile-first strategy and increase content frequency."
+        domainAuthority: mozData.domainAuthority,
+        pageAuthority: mozData.pageAuthority,
+        spamScore: mozData.spamScore,
+        linkingDomains: mozData.linkingDomains,
+        totalLinks: mozData.totalLinks,
+        seoStrength: mozData.seoStrength,
+        insights: aiInsights.insights,
+        threats: aiInsights.threats,
+        opportunities: aiInsights.opportunities,
+        recommendations: aiInsights.recommendations
       });
       
       res.json(analysis);
@@ -182,21 +202,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const analyses = [];
       
       for (const competitor of competitors) {
-        // Here you would call your AI analysis service
-        // For now, we'll create a mock analysis
-        const analysis = await storage.createCompetitiveAnalysis({
-          companyId: company.id,
-          competitorId: competitor.id,
-          marketShare: Math.floor(Math.random() * 30) + 10,
-          contentVolume: ["High", "Medium", "Low"][Math.floor(Math.random() * 3)],
-          seoStrength: ["Strong", "Medium", "Weak"][Math.floor(Math.random() * 3)],
-          insights: `${competitor.name} has strong market presence with consistent content strategy.`,
-          threats: `${competitor.name} has advanced technology and strong brand recognition in the market.`,
-          opportunities: "Gap in mobile optimization and social media engagement.",
-          recommendations: "Focus on mobile-first strategy and increase content frequency."
-        });
+        // Check if competitor.id is valid
+        if (!competitor.id || isNaN(competitor.id)) {
+          console.error(`Invalid competitor ID: ${competitor.id}`);
+          continue;
+        }
         
-        analyses.push(analysis);
+        try {
+          // Get real SEO data from Moz API
+          const mozData = await mozApi.analyzeCompetitor(competitor.website || '');
+          
+          // Generate AI insights using OpenAI
+          const aiInsights = await analyzeCompetitor(competitor.name, competitor.website || '', mozData);
+          
+          const analysis = await storage.createCompetitiveAnalysis({
+            companyId: company.id,
+            competitorId: competitor.id,
+            domainAuthority: mozData.domainAuthority,
+            pageAuthority: mozData.pageAuthority,
+            spamScore: mozData.spamScore,
+            linkingDomains: mozData.linkingDomains,
+            totalLinks: mozData.totalLinks,
+            seoStrength: mozData.seoStrength,
+            insights: aiInsights.insights,
+            threats: aiInsights.threats,
+            opportunities: aiInsights.opportunities,
+            recommendations: aiInsights.recommendations
+          });
+          
+          analyses.push(analysis);
+        } catch (error) {
+          console.error(`Error analyzing competitor ${competitor.name}:`, error);
+          // Continue with other competitors even if one fails
+        }
       }
       
       res.json(analyses);
