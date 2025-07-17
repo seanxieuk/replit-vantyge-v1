@@ -47,11 +47,11 @@ export default function Sidebar() {
     <div className="w-64 bg-sidebar-background text-sidebar-foreground flex flex-col min-h-screen" style={{ backgroundColor: 'hsl(220, 26%, 14%)' }}>
       {/* Logo */}
       <div className="p-6 border-b border-sidebar-border bg-sidebar-background" style={{ backgroundColor: 'hsl(220, 26%, 14%)' }}>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-center">
           <img 
             src={logoSvg} 
             alt="Logo" 
-            className="h-8 w-auto"
+            className="h-16 w-auto max-w-full"
           />
         </div>
       </div>
