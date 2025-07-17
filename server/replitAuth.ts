@@ -27,10 +27,15 @@ export function getSession() {
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
+    createTableIfMissing: true,
     ttl: sessionTtl,
     tableName: "sessions",
   });
+  
+  sessionStore.on('error', (error) => {
+    console.error('[SESSION] Store error:', error);
+  });
+  
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
@@ -38,7 +43,7 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       maxAge: sessionTtl,
     },
   });
@@ -78,10 +83,17 @@ export async function setupAuth(app: Express) {
     tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
     verified: passport.AuthenticateCallback
   ) => {
-    const user = {};
-    updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
-    verified(null, user);
+    try {
+      console.log(`[AUTH] Verify function called`);
+      const user = {};
+      updateUserSession(user, tokens);
+      await upsertUser(tokens.claims());
+      console.log(`[AUTH] User authenticated successfully:`, tokens.claims()?.sub);
+      verified(null, user);
+    } catch (error) {
+      console.error(`[AUTH] Error in verify function:`, error);
+      verified(error, false);
+    }
   };
 
   for (const domain of process.env
@@ -109,6 +121,8 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/callback", (req, res, next) => {
+    console.log(`[AUTH] Callback hit for domain: ${req.hostname}`);
+    console.log(`[AUTH] Query params:`, req.query);
     passport.authenticate(`replitauth:${req.hostname}`, {
       successReturnToOrRedirect: "/",
       failureRedirect: "/api/login",
