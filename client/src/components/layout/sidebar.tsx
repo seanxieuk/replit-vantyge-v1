@@ -15,6 +15,7 @@ import {
   LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logoSvg from "@assets/2_color_light.svg";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3, group: "Overview" },
@@ -47,10 +48,11 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Brain className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-semibold">MarketingAI</span>
+          <img 
+            src={logoSvg} 
+            alt="Logo" 
+            className="h-8 w-auto"
+          />
         </div>
       </div>
 
@@ -58,7 +60,7 @@ export default function Sidebar() {
       <nav className="flex-1 px-4 py-6 space-y-1">
         {Object.entries(groupedNav).map(([group, items]) => (
           <div key={group}>
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">
+            <div className="text-xs font-medium text-sidebar-foreground/60 uppercase tracking-wider mb-3">
               {group}
             </div>
             <div className="space-y-1 mb-6">
@@ -71,7 +73,7 @@ export default function Sidebar() {
                         "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer",
                         isActive
                           ? "bg-primary text-primary-foreground"
-                          : "text-gray-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       )}
                     >
                       <item.icon className="w-5 h-5 mr-3" />
@@ -96,7 +98,7 @@ export default function Sidebar() {
                 className="w-8 h-8 rounded-full object-cover"
               />
             ) : (
-              <span className="text-sm font-medium text-gray-300">
+              <span className="text-sm font-medium text-sidebar-foreground">
                 {user?.firstName?.[0] || user?.email?.[0] || "U"}
               </span>
             )}
@@ -108,14 +110,14 @@ export default function Sidebar() {
                 : user?.email || "User"
               }
             </div>
-            <div className="text-xs text-gray-400">Marketing Team</div>
+            <div className="text-xs text-sidebar-foreground/60">Marketing Team</div>
           </div>
         </div>
         <Button 
           variant="ghost" 
           size="sm" 
           onClick={handleLogout}
-          className="w-full justify-start text-gray-300 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"
+          className="w-full justify-start text-sidebar-foreground/80 hover:text-sidebar-accent-foreground hover:bg-sidebar-accent"
         >
           <LogOut className="w-4 h-4 mr-2" />
           Sign Out
