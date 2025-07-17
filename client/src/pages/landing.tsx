@@ -8,7 +8,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center pb-2">
           <div className="flex items-center justify-center space-x-3 mb-6">
@@ -23,7 +23,7 @@ export default function Landing() {
         <CardContent className="pt-6">
           <Button 
             onClick={handleLogin} 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
+            className="w-full py-3 text-lg font-medium"
             size="lg"
           >
             Sign In

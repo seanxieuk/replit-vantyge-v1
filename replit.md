@@ -9,6 +9,7 @@ MarketingAI is a full-stack AI-powered marketing intelligence platform that help
 Preferred communication style: Simple, everyday language.
 Landing page preference: Streamlined login-only experience for existing users only, with sign-up option removed.
 Authentication approach: Restrict access to existing users, direct contact for new access requests.
+Primary button color: #76a6a9 (teal-green) used consistently across all pages and components.
 
 ## System Architecture
 
