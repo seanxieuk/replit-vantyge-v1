@@ -44,9 +44,9 @@ export default function Sidebar() {
   }, {} as Record<string, typeof navigation>);
 
   return (
-    <div className="w-64 bg-sidebar-background text-sidebar-foreground flex flex-col">
+    <div className="w-64 bg-sidebar-background text-sidebar-foreground flex flex-col min-h-screen" style={{ backgroundColor: 'hsl(220, 26%, 14%)' }}>
       {/* Logo */}
-      <div className="p-6 border-b border-sidebar-border">
+      <div className="p-6 border-b border-sidebar-border bg-sidebar-background" style={{ backgroundColor: 'hsl(220, 26%, 14%)' }}>
         <div className="flex items-center space-x-3">
           <img 
             src={logoSvg} 
@@ -57,7 +57,7 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-1">
+      <nav className="flex-1 px-4 py-6 space-y-1 bg-sidebar-background" style={{ backgroundColor: 'hsl(220, 26%, 14%)' }}>
         {Object.entries(groupedNav).map(([group, items]) => (
           <div key={group}>
             <div className="text-xs font-medium text-sidebar-foreground/60 uppercase tracking-wider mb-3">
@@ -88,7 +88,7 @@ export default function Sidebar() {
       </nav>
 
       {/* User Profile */}
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="p-4 border-t border-sidebar-border bg-sidebar-background" style={{ backgroundColor: 'hsl(220, 26%, 14%)' }}>
         <div className="flex items-center space-x-3 mb-3">
           <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
             {user?.profileImageUrl ? (
