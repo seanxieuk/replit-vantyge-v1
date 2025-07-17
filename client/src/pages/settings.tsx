@@ -159,23 +159,51 @@ export default function Settings() {
     },
   });
 
+  // Helper function to compress image
+  const compressImage = (file: File, maxWidth = 400, quality = 0.8): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedDataUrl);
+      };
+      
+      img.onerror = () => reject(new Error("Failed to load image"));
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsDataURL(file);
+    });
+  };
+
   // Upload profile photo mutation
   const uploadPhotoMutation = useMutation({
     mutationFn: async (file: File) => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = async () => {
-          try {
-            const imageData = reader.result as string;
-            const result = await apiRequest("POST", "/api/user/upload-photo", { imageData });
-            resolve(result);
-          } catch (error) {
-            reject(error);
-          }
-        };
-        reader.onerror = () => reject(new Error("Failed to read file"));
-        reader.readAsDataURL(file);
-      });
+      try {
+        const compressedImageData = await compressImage(file);
+        const result = await apiRequest("POST", "/api/user/upload-photo", { imageData: compressedImageData });
+        return result;
+      } catch (error) {
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
