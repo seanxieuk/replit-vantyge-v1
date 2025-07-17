@@ -282,3 +282,164 @@ Focus on actionable, strategic recommendations based on the company data provide
     throw new Error("Failed to analyze positioning: " + (error as Error).message);
   }
 }
+
+export interface CompetitiveLandscapeAnalysis {
+  summary: string;
+  competitivePosition: {
+    marketPosition: string;
+    strengths: string[];
+    weaknesses: string[];
+    opportunities: string[];
+    threats: string[];
+  };
+  competitorInsights: {
+    id: string;
+    name: string;
+    positioning: string;
+    strengths: string[];
+    weaknesses: string[];
+    marketShare: string;
+    threat_level: "Low" | "Medium" | "High";
+  }[];
+  recommendations: {
+    id: string;
+    category: string;
+    priority: "High" | "Medium" | "Low";
+    title: string;
+    description: string;
+    actionItems: string[];
+    timeline: string;
+    expectedImpact: string;
+  }[];
+  marketOpportunities: string[];
+  strategicImplications: string[];
+}
+
+export async function analyzeCompetitiveLandscape(
+  company: any,
+  competitors: any[]
+): Promise<CompetitiveLandscapeAnalysis> {
+  try {
+    const competitorData = competitors.map(comp => ({
+      name: comp.name,
+      website: comp.website,
+      description: comp.description,
+      domainAuthority: comp.domainAuthority,
+      pageAuthority: comp.pageAuthority,
+      spamScore: comp.spamScore
+    }));
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      messages: [
+        {
+          role: "system",
+          content: `You are a competitive intelligence expert. Analyze the competitive landscape and provide strategic insights. Respond with JSON in this exact format: {
+            "summary": "string - comprehensive market overview",
+            "competitivePosition": {
+              "marketPosition": "string - current market position",
+              "strengths": ["strength1", "strength2", "strength3"],
+              "weaknesses": ["weakness1", "weakness2", "weakness3"],
+              "opportunities": ["opportunity1", "opportunity2", "opportunity3"],
+              "threats": ["threat1", "threat2", "threat3"]
+            },
+            "competitorInsights": [
+              {
+                "id": "comp1",
+                "name": "Competitor Name",
+                "positioning": "string - their market positioning",
+                "strengths": ["strength1", "strength2"],
+                "weaknesses": ["weakness1", "weakness2"],
+                "marketShare": "string - estimated market share",
+                "threat_level": "High"
+              }
+            ],
+            "recommendations": [
+              {
+                "id": "rec1",
+                "category": "Market Strategy",
+                "priority": "High",
+                "title": "Strategic Recommendation",
+                "description": "Detailed description",
+                "actionItems": ["action1", "action2", "action3"],
+                "timeline": "3-6 months",
+                "expectedImpact": "Expected outcome"
+              }
+            ],
+            "marketOpportunities": ["opportunity1", "opportunity2", "opportunity3"],
+            "strategicImplications": ["implication1", "implication2", "implication3"]
+          }`
+        },
+        {
+          role: "user",
+          content: `Analyze the competitive landscape for:
+
+Your Company:
+- Name: ${company.name}
+- Industry: ${company.industry || 'Not specified'}
+- Website: ${company.website || 'Not specified'}
+- Description: ${company.description || 'Not specified'}
+- Products/Services: ${company.products?.join(', ') || 'Not specified'}
+- Unique Selling Proposition: ${company.uniqueSellingProposition || 'Not specified'}
+- Target Audience: ${company.idealCustomerProfiles || 'Not specified'}
+
+Competitors:
+${competitorData.map(comp => `
+- Name: ${comp.name}
+- Website: ${comp.website || 'Not specified'}
+- Description: ${comp.description || 'Not specified'}
+- Domain Authority: ${comp.domainAuthority || 'Not available'}
+- Page Authority: ${comp.pageAuthority || 'Not available'}
+- Spam Score: ${comp.spamScore || 'Not available'}
+`).join('\n')}
+
+Provide:
+1. Comprehensive competitive landscape analysis
+2. SWOT analysis for your company in this competitive context
+3. Individual competitor insights with threat assessment
+4. Strategic recommendations with priorities and timelines
+5. Market opportunities and strategic implications
+
+Focus on actionable insights that can inform strategic decisions.`
+        }
+      ],
+      response_format: { type: "json_object" },
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || "{}");
+    
+    return {
+      summary: result.summary || "Analysis unavailable",
+      competitivePosition: {
+        marketPosition: result.competitivePosition?.marketPosition || "Position unclear",
+        strengths: Array.isArray(result.competitivePosition?.strengths) ? result.competitivePosition.strengths : [],
+        weaknesses: Array.isArray(result.competitivePosition?.weaknesses) ? result.competitivePosition.weaknesses : [],
+        opportunities: Array.isArray(result.competitivePosition?.opportunities) ? result.competitivePosition.opportunities : [],
+        threats: Array.isArray(result.competitivePosition?.threats) ? result.competitivePosition.threats : []
+      },
+      competitorInsights: Array.isArray(result.competitorInsights) ? result.competitorInsights.map((comp: any, index: number) => ({
+        id: comp.id || `comp-${index}`,
+        name: comp.name || "Unknown Competitor",
+        positioning: comp.positioning || "",
+        strengths: Array.isArray(comp.strengths) ? comp.strengths : [],
+        weaknesses: Array.isArray(comp.weaknesses) ? comp.weaknesses : [],
+        marketShare: comp.marketShare || "Unknown",
+        threat_level: ["Low", "Medium", "High"].includes(comp.threat_level) ? comp.threat_level : "Medium"
+      })) : [],
+      recommendations: Array.isArray(result.recommendations) ? result.recommendations.map((rec: any, index: number) => ({
+        id: rec.id || `rec-${index}`,
+        category: rec.category || "General",
+        priority: ["High", "Medium", "Low"].includes(rec.priority) ? rec.priority : "Medium",
+        title: rec.title || "Strategic Recommendation",
+        description: rec.description || "",
+        actionItems: Array.isArray(rec.actionItems) ? rec.actionItems : [],
+        timeline: rec.timeline || "TBD",
+        expectedImpact: rec.expectedImpact || ""
+      })) : [],
+      marketOpportunities: Array.isArray(result.marketOpportunities) ? result.marketOpportunities : [],
+      strategicImplications: Array.isArray(result.strategicImplications) ? result.strategicImplications : []
+    };
+  } catch (error) {
+    throw new Error("Failed to analyze competitive landscape: " + (error as Error).message);
+  }
+}

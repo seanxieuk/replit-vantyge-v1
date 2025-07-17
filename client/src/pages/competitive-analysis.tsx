@@ -210,6 +210,8 @@ export default function CompetitiveAnalysisPage() {
     website: "",
     description: "",
   });
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [landscapeAnalysis, setLandscapeAnalysis] = useState<any>(null);
 
 
   const { data: competitors, isLoading } = useQuery<Competitor[]>({
@@ -328,9 +330,48 @@ export default function CompetitiveAnalysisPage() {
     },
   });
 
+  const analyzeLandscapeMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/competitive-landscape-analysis", {});
+    },
+    onSuccess: (data) => {
+      setLandscapeAnalysis(data);
+      toast({
+        title: "Success",
+        description: "Competitive landscape analysis completed",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to analyze competitive landscape",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAnalyzeAll = () => {
     if (!competitors?.length) return;
     analyzeAllMutation.mutate();
+  };
+
+  const handleAnalyzeLandscape = () => {
+    if (!competitors?.length) return;
+    setIsAnalyzing(true);
+    analyzeLandscapeMutation.mutate(undefined, {
+      onSettled: () => setIsAnalyzing(false)
+    });
   };
 
   const getAnalysisForCompetitor = (competitorId: number) => {
@@ -358,17 +399,17 @@ export default function CompetitiveAnalysisPage() {
           <div className="flex justify-end gap-2">
             <Button
               variant="outline"
-              onClick={handleAnalyzeAll}
-              disabled={!competitors?.length || analyzeAllMutation.isPending}
+              onClick={handleAnalyzeLandscape}
+              disabled={!competitors?.length || isAnalyzing}
             >
-              {analyzeAllMutation.isPending ? (
+              {isAnalyzing ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
                   Analyzing...
                 </>
               ) : (
                 <>
-                  <Search className="h-4 w-4 mr-2" />
+                  <BarChart3 className="h-4 w-4 mr-2" />
                   Analyze All
                 </>
               )}
@@ -447,6 +488,175 @@ export default function CompetitiveAnalysisPage() {
                 </Button>
               </div>
             </Card>
+          )}
+
+          {/* Competitive Landscape Analysis Results */}
+          {landscapeAnalysis && (
+            <div className="space-y-6">
+              <div className="border-t pt-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Competitive Landscape Analysis</h2>
+                
+                {/* Executive Summary */}
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Executive Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700">{landscapeAnalysis.summary}</p>
+                  </CardContent>
+                </Card>
+
+                {/* SWOT Analysis */}
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Target className="h-5 w-5" />
+                      Your Competitive Position
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-4">
+                      <h4 className="font-medium text-gray-900 mb-2">Market Position</h4>
+                      <p className="text-gray-700">{landscapeAnalysis.competitivePosition.marketPosition}</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          Strengths
+                        </h4>
+                        <ul className="space-y-1">
+                          {landscapeAnalysis.competitivePosition.strengths.map((strength: string, index: number) => (
+                            <li key={index} className="flex items-start gap-2 text-sm">
+                              <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
+                              {strength}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-red-600" />
+                          Weaknesses
+                        </h4>
+                        <ul className="space-y-1">
+                          {landscapeAnalysis.competitivePosition.weaknesses.map((weakness: string, index: number) => (
+                            <li key={index} className="flex items-start gap-2 text-sm">
+                              <AlertTriangle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
+                              {weakness}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-blue-600" />
+                          Opportunities
+                        </h4>
+                        <ul className="space-y-1">
+                          {landscapeAnalysis.competitivePosition.opportunities.map((opportunity: string, index: number) => (
+                            <li key={index} className="flex items-start gap-2 text-sm">
+                              <TrendingUp className="h-3 w-3 text-blue-500 mt-0.5 flex-shrink-0" />
+                              {opportunity}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-orange-600" />
+                          Threats
+                        </h4>
+                        <ul className="space-y-1">
+                          {landscapeAnalysis.competitivePosition.threats.map((threat: string, index: number) => (
+                            <li key={index} className="flex items-start gap-2 text-sm">
+                              <Shield className="h-3 w-3 text-orange-500 mt-0.5 flex-shrink-0" />
+                              {threat}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Competitor Insights */}
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Eye className="h-5 w-5" />
+                      Competitor Insights
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {landscapeAnalysis.competitorInsights.map((insight: any) => (
+                        <div key={insight.id} className="border rounded-lg p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <h4 className="font-medium text-gray-900">{insight.name}</h4>
+                            <Badge variant={insight.threat_level === 'High' ? 'destructive' : insight.threat_level === 'Medium' ? 'default' : 'secondary'}>
+                              {insight.threat_level} Threat
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-3">{insight.positioning}</p>
+                          <p className="text-sm text-gray-500">Est. Market Share: {insight.marketShare}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Strategic Recommendations */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Lightbulb className="h-5 w-5" />
+                      Strategic Recommendations
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {landscapeAnalysis.recommendations.map((rec: any) => (
+                        <div key={rec.id} className="border rounded-lg p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <h4 className="font-medium text-gray-900">{rec.title}</h4>
+                            <Badge variant={rec.priority === 'High' ? 'destructive' : rec.priority === 'Medium' ? 'default' : 'secondary'}>
+                              {rec.priority} Priority
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-3">{rec.description}</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="font-medium">Timeline:</span> {rec.timeline}
+                            </div>
+                            <div>
+                              <span className="font-medium">Expected Impact:</span> {rec.expectedImpact}
+                            </div>
+                          </div>
+                          {rec.actionItems && rec.actionItems.length > 0 && (
+                            <div className="mt-3">
+                              <span className="font-medium text-sm">Action Items:</span>
+                              <ul className="list-disc list-inside mt-1 space-y-1">
+                                {rec.actionItems.map((item: string, index: number) => (
+                                  <li key={index} className="text-sm text-gray-600">{item}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           )}
         </div>
       </main>

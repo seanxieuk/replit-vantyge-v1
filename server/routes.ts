@@ -8,7 +8,7 @@ import {
   insertContentItemSchema,
   insertContentStrategySchema 
 } from "@shared/schema";
-import { analyzeCompetitor, generateContent, generateContentStrategy, analyzePositioning } from "./openai";
+import { analyzeCompetitor, generateContent, generateContentStrategy, analyzePositioning, analyzeCompetitiveLandscape } from "./openai";
 import { mozApi } from "./mozApi";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -404,6 +404,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating blog ideas:", error);
       res.status(500).json({ message: "Failed to generate blog ideas" });
+    }
+  });
+
+  // Competitive landscape analysis endpoint
+  app.post('/api/competitive-landscape-analysis', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(400).json({ message: "Company profile not found. Please complete your company setup first." });
+      }
+
+      const competitors = await storage.getCompetitorsByCompanyId(company.id);
+      
+      if (!competitors || competitors.length === 0) {
+        return res.status(400).json({ message: "No competitors found. Please add competitors to perform analysis." });
+      }
+
+      // Use OpenAI to analyze competitive landscape
+      const analysis = await analyzeCompetitiveLandscape(company, competitors);
+      
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error analyzing competitive landscape:", error);
+      res.status(500).json({ message: "Failed to analyze competitive landscape" });
     }
   });
 
