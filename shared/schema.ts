@@ -1,0 +1,148 @@
+import {
+  pgTable,
+  text,
+  varchar,
+  timestamp,
+  jsonb,
+  index,
+  serial,
+  integer,
+  boolean,
+} from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+// Session storage table.
+// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// User storage table.
+// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().notNull(),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Company information
+export const companies = pgTable("companies", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  industry: text("industry"),
+  size: text("size"),
+  website: text("website"),
+  description: text("description"),
+  targetAudience: text("target_audience"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Competitors
+export const competitors = pgTable("competitors", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  name: text("name").notNull(),
+  website: text("website"),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Competitive analysis results
+export const competitiveAnalyses = pgTable("competitive_analyses", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  competitorId: integer("competitor_id").notNull().references(() => competitors.id),
+  marketShare: integer("market_share"),
+  contentVolume: text("content_volume"),
+  seoStrength: text("seo_strength"),
+  insights: text("insights"),
+  threats: text("threats"),
+  opportunities: text("opportunities"),
+  recommendations: text("recommendations"),
+  analyzedAt: timestamp("analyzed_at").defaultNow(),
+});
+
+// Content items
+export const contentItems = pgTable("content_items", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  title: text("title").notNull(),
+  content: text("content"),
+  type: text("type").notNull(), // blog, social, email, etc.
+  status: text("status").notNull().default("draft"), // draft, review, published
+  keywords: text("keywords"),
+  tone: text("tone"),
+  wordCount: integer("word_count"),
+  scheduledFor: timestamp("scheduled_for"),
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Content strategies
+export const contentStrategies = pgTable("content_strategies", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  targetKeywords: text("target_keywords").array(),
+  contentPillars: text("content_pillars").array(),
+  recommendations: text("recommendations"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Schema exports
+export type UpsertUser = typeof users.$inferInsert;
+export type User = typeof users.$inferSelect;
+
+export const insertCompanySchema = createInsertSchema(companies).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCompany = z.infer<typeof insertCompanySchema>;
+export type Company = typeof companies.$inferSelect;
+
+export const insertCompetitorSchema = createInsertSchema(competitors).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertCompetitor = z.infer<typeof insertCompetitorSchema>;
+export type Competitor = typeof competitors.$inferSelect;
+
+export const insertContentItemSchema = createInsertSchema(contentItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertContentItem = z.infer<typeof insertContentItemSchema>;
+export type ContentItem = typeof contentItems.$inferSelect;
+
+export const insertContentStrategySchema = createInsertSchema(contentStrategies).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertContentStrategy = z.infer<typeof insertContentStrategySchema>;
+export type ContentStrategy = typeof contentStrategies.$inferSelect;
+
+export type CompetitiveAnalysis = typeof competitiveAnalyses.$inferSelect;
+export const insertCompetitiveAnalysisSchema = createInsertSchema(competitiveAnalyses).omit({
+  id: true,
+  analyzedAt: true,
+});
+export type InsertCompetitiveAnalysis = z.infer<typeof insertCompetitiveAnalysisSchema>;
