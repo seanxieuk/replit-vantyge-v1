@@ -50,9 +50,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload profile photo
   app.post('/api/user/upload-photo', isAuthenticated, async (req: any, res) => {
     try {
-      // For now, we'll return a placeholder since we don't have file upload setup
-      // In a real app, you'd use multer or similar to handle file uploads
-      res.status(501).json({ message: "Photo upload not implemented yet" });
+      const userId = req.user.claims.sub;
+      const { imageData } = req.body;
+      
+      if (!imageData) {
+        return res.status(400).json({ message: "No image data provided" });
+      }
+
+      // Update user with the new profile image URL (base64 data URL)
+      const updatedUser = await storage.updateUser(userId, {
+        profileImageUrl: imageData
+      });
+      
+      res.json({ 
+        message: "Profile photo uploaded successfully",
+        profileImageUrl: updatedUser.profileImageUrl 
+      });
     } catch (error) {
       console.error("Error uploading photo:", error);
       res.status(500).json({ message: "Failed to upload photo" });

@@ -162,9 +162,20 @@ export default function Settings() {
   // Upload profile photo mutation
   const uploadPhotoMutation = useMutation({
     mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append('profileImage', file);
-      return await apiRequest("POST", "/api/user/upload-photo", formData);
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          try {
+            const imageData = reader.result as string;
+            const result = await apiRequest("POST", "/api/user/upload-photo", { imageData });
+            resolve(result);
+          } catch (error) {
+            reject(error);
+          }
+        };
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+      });
     },
     onSuccess: () => {
       toast({
@@ -174,6 +185,17 @@ export default function Settings() {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
     onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
       toast({
         title: "Error",
         description: "Failed to upload profile photo",
@@ -233,6 +255,10 @@ export default function Settings() {
           description: "Please select an image file",
           variant: "destructive",
         });
+        // Clear the input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
         return;
       }
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
@@ -241,9 +267,18 @@ export default function Settings() {
           description: "Image size must be less than 5MB",
           variant: "destructive",
         });
+        // Clear the input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
         return;
       }
       uploadPhotoMutation.mutate(file);
+    }
+    
+    // Clear the input after upload attempt
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
