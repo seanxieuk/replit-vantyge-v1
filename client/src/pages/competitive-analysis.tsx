@@ -310,8 +310,15 @@ export default function CompetitiveAnalysisPage() {
 
   const handleAddCompetitor = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!competitorForm.name) return;
-    addCompetitorMutation.mutate(competitorForm);
+    if (!competitorForm.website) return;
+    
+    // Ensure name is generated from website if not already set
+    const finalForm = {
+      ...competitorForm,
+      name: competitorForm.name || competitorForm.website.replace(/^https?:\/\//, '').replace(/^www\./, '').split('.')[0]
+    };
+    
+    addCompetitorMutation.mutate(finalForm);
   };
 
   const handleAnalyzeCompetitor = (competitorId: number) => {
@@ -363,31 +370,27 @@ export default function CompetitiveAnalysisPage() {
                 </DialogHeader>
                 <form onSubmit={handleAddCompetitor} className="space-y-4">
                   <div>
-                    <Label htmlFor="name">Competitor Name</Label>
+                    <Label htmlFor="website">Website/Domain</Label>
                     <Input
-                      id="name"
-                      value={competitorForm.name || ""}
-                      onChange={(e) => setCompetitorForm(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Enter competitor name"
+                      id="website"
+                      value={competitorForm.website || ""}
+                      onChange={(e) => setCompetitorForm(prev => ({ 
+                        ...prev, 
+                        website: e.target.value,
+                        // Auto-generate name from domain
+                        name: e.target.value ? e.target.value.replace(/^https?:\/\//, '').replace(/^www\./, '').split('.')[0] : prev.name
+                      }))}
+                      placeholder="https://competitor.com"
                       required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="website">Website</Label>
-                    <Input
-                      id="website"
-                      value={competitorForm.website || ""}
-                      onChange={(e) => setCompetitorForm(prev => ({ ...prev, website: e.target.value }))}
-                      placeholder="https://competitor.com"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="description">Description/Notes</Label>
+                    <Label htmlFor="description">Additional Notes/Context</Label>
                     <Textarea
                       id="description"
                       value={competitorForm.description || ""}
                       onChange={(e) => setCompetitorForm(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Add notes about this competitor..."
+                      placeholder="Add any additional context or notes about this competitor..."
                       rows={3}
                     />
                   </div>
