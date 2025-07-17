@@ -27,6 +27,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user profile
+  app.patch('/api/user/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { firstName, lastName, email, role } = req.body;
+      
+      const updatedUser = await storage.updateUser(userId, {
+        firstName,
+        lastName,
+        email,
+        role
+      });
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  // Upload profile photo
+  app.post('/api/user/upload-photo', isAuthenticated, async (req: any, res) => {
+    try {
+      // For now, we'll return a placeholder since we don't have file upload setup
+      // In a real app, you'd use multer or similar to handle file uploads
+      res.status(501).json({ message: "Photo upload not implemented yet" });
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      res.status(500).json({ message: "Failed to upload photo" });
+    }
+  });
+
   // Company routes
   app.get('/api/company', isAuthenticated, async (req: any, res) => {
     try {
@@ -36,6 +68,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching company:", error);
       res.status(500).json({ message: "Failed to fetch company" });
+    }
+  });
+
+  // Update company information
+  app.patch('/api/company', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { name, industry, description } = req.body;
+      
+      const updatedCompany = await storage.updateCompanyByUserId(userId, {
+        name,
+        industry,
+        description
+      });
+      
+      res.json(updatedCompany);
+    } catch (error) {
+      console.error("Error updating company:", error);
+      res.status(500).json({ message: "Failed to update company" });
     }
   });
 

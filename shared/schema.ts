@@ -31,6 +31,7 @@ export const users = pgTable("users", {
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
+  role: varchar("role"),
   profileImageUrl: varchar("profile_image_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -42,6 +43,7 @@ export const companies = pgTable("companies", {
   userId: varchar("user_id").notNull().references(() => users.id),
   name: text("name").notNull(),
   domain: text("domain"),
+  website: text("website"), // Keep existing field to preserve data
   linkedinUrl: text("linkedin_url"),
   industry: text("industry"),
   size: text("size"),

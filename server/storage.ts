@@ -27,11 +27,13 @@ export interface IStorage {
   // (IMPORTANT) these user operations are mandatory for Replit Auth.
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  updateUser(id: string, userData: Partial<UpsertUser>): Promise<User>;
   
   // Company operations
   getCompanyByUserId(userId: string): Promise<Company | undefined>;
   createCompany(company: InsertCompany): Promise<Company>;
   updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company>;
+  updateCompanyByUserId(userId: string, company: Partial<InsertCompany>): Promise<Company>;
   
   // Competitor operations
   getCompetitorsByCompanyId(companyId: number): Promise<Competitor[]>;
@@ -83,6 +85,18 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async updateUser(id: string, userData: Partial<UpsertUser>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        ...userData,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
   // Company operations
   async getCompanyByUserId(userId: string): Promise<Company | undefined> {
     const [company] = await db.select().from(companies).where(eq(companies.userId, userId));
@@ -101,6 +115,28 @@ export class DatabaseStorage implements IStorage {
       .where(eq(companies.id, id))
       .returning();
     return updatedCompany;
+  }
+
+  async updateCompanyByUserId(userId: string, companyData: Partial<InsertCompany>): Promise<Company> {
+    // First check if company exists for this user
+    const existingCompany = await this.getCompanyByUserId(userId);
+    
+    if (existingCompany) {
+      // Update existing company
+      const [updatedCompany] = await db
+        .update(companies)
+        .set({ ...companyData, updatedAt: new Date() })
+        .where(eq(companies.userId, userId))
+        .returning();
+      return updatedCompany;
+    } else {
+      // Create new company for user
+      const [newCompany] = await db
+        .insert(companies)
+        .values({ ...companyData, userId })
+        .returning();
+      return newCompany;
+    }
   }
 
   // Competitor operations

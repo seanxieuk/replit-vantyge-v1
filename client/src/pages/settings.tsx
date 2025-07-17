@@ -1,11 +1,18 @@
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { isUnauthorizedError } from "@/lib/authUtils";
 import Header from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   User, 
   Mail, 
@@ -17,12 +24,59 @@ import {
   Key,
   Smartphone,
   Monitor,
-  Edit
+  Edit,
+  Save,
+  X,
+  Upload
 } from "lucide-react";
 
 export default function Settings() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading } = useAuth();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isEditingCompany, setIsEditingCompany] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    role: "",
+  });
+  const [companyForm, setCompanyForm] = useState({
+    name: "",
+    industry: "",
+    description: "",
+  });
+
+  // Get company data
+  const { data: company } = useQuery({
+    queryKey: ["/api/company"],
+    enabled: !!user,
+  });
+
+  // Initialize forms when data loads
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        role: "Marketing Director", // Default role
+      });
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (company) {
+      setCompanyForm({
+        name: company.name || "",
+        industry: company.industry || "",
+        description: company.description || "",
+      });
+    }
+  }, [company]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -39,11 +93,158 @@ export default function Settings() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiRequest("PATCH", "/api/user/profile", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      setIsEditingProfile(false);
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update company mutation
+  const updateCompanyMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiRequest("PATCH", "/api/company", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Company information updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/company"] });
+      setIsEditingCompany(false);
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to update company information",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Upload profile photo mutation
+  const uploadPhotoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('profileImage', file);
+      return await apiRequest("POST", "/api/user/upload-photo", formData);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Profile photo updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to upload profile photo",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleEditProfile = () => {
-    toast({
-      title: "Coming Soon",
-      description: "Profile editing will be available soon",
-    });
+    setIsEditingProfile(true);
+  };
+
+  const handleSaveProfile = () => {
+    updateProfileMutation.mutate(profileForm);
+  };
+
+  const handleCancelProfileEdit = () => {
+    // Reset form to original values
+    if (user) {
+      setProfileForm({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        role: "Marketing Director",
+      });
+    }
+    setIsEditingProfile(false);
+  };
+
+  const handleEditCompany = () => {
+    setIsEditingCompany(true);
+  };
+
+  const handleSaveCompany = () => {
+    updateCompanyMutation.mutate(companyForm);
+  };
+
+  const handleCancelCompanyEdit = () => {
+    // Reset form to original values
+    if (company) {
+      setCompanyForm({
+        name: company.name || "",
+        industry: company.industry || "",
+        description: company.description || "",
+      });
+    }
+    setIsEditingCompany(false);
+  };
+
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type and size
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "Error",
+          description: "Image size must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      uploadPhotoMutation.mutate(file);
+    }
   };
 
   const handleChangePassword = () => {
@@ -120,10 +321,30 @@ export default function Settings() {
                   Update your personal details and contact information
                 </p>
               </div>
-              <Button variant="ghost" onClick={handleEditProfile} className="text-primary hover:text-primary/80">
-                <Edit className="w-4 h-4 mr-2" />
-                Edit
-              </Button>
+              {!isEditingProfile ? (
+                <Button variant="ghost" onClick={handleEditProfile} className="text-primary hover:text-primary/80">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button 
+                    variant="ghost" 
+                    onClick={handleCancelProfileEdit}
+                    disabled={updateProfileMutation.isPending}
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleSaveProfile}
+                    disabled={updateProfileMutation.isPending}
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {updateProfileMutation.isPending ? "Saving..." : "Save"}
+                  </Button>
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               <div className="flex items-start space-x-6">
@@ -141,49 +362,104 @@ export default function Settings() {
                       </span>
                     )}
                   </div>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handlePhotoUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={handleEditProfile}
+                    onClick={() => fileInputRef.current?.click()}
                     className="mt-3 text-sm text-primary hover:text-primary/80 w-full"
+                    disabled={uploadPhotoMutation.isPending}
                   >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Change Photo
+                    <Upload className="w-4 h-4 mr-2" />
+                    {uploadPhotoMutation.isPending ? "Uploading..." : "Change Photo"}
                   </Button>
                 </div>
 
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                    <div className="flex items-center text-gray-900">
-                      <User className="w-4 h-4 text-gray-400 mr-3" />
-                      <span>{userFullName}</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                    <div className="flex items-center text-gray-900">
-                      <Mail className="w-4 h-4 text-gray-400 mr-3" />
-                      <span>{user?.email || "Not provided"}</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
-                    <div className="flex items-center text-gray-900">
-                      <Briefcase className="w-4 h-4 text-gray-400 mr-3" />
-                      <span>Marketing Director</span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Company</label>
-                    <div className="flex items-center text-gray-900">
-                      <Building className="w-4 h-4 text-gray-400 mr-3" />
-                      <span>Acme Corporation</span>
-                    </div>
-                  </div>
+                  {isEditingProfile ? (
+                    <>
+                      <div>
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input
+                          id="firstName"
+                          value={profileForm.firstName}
+                          onChange={(e) => setProfileForm(prev => ({...prev, firstName: e.target.value}))}
+                          placeholder="Enter first name"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input
+                          id="lastName"
+                          value={profileForm.lastName}
+                          onChange={(e) => setProfileForm(prev => ({...prev, lastName: e.target.value}))}
+                          placeholder="Enter last name"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="email">Email Address</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={profileForm.email}
+                          onChange={(e) => setProfileForm(prev => ({...prev, email: e.target.value}))}
+                          placeholder="Enter email"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="role">Role</Label>
+                        <Input
+                          id="role"
+                          value={profileForm.role}
+                          onChange={(e) => setProfileForm(prev => ({...prev, role: e.target.value}))}
+                          placeholder="Enter your role"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                        <div className="flex items-center text-gray-900">
+                          <User className="w-4 h-4 text-gray-400 mr-3" />
+                          <span>{userFullName}</span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                        <div className="flex items-center text-gray-900">
+                          <Mail className="w-4 h-4 text-gray-400 mr-3" />
+                          <span>{user?.email || "Not provided"}</span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                        <div className="flex items-center text-gray-900">
+                          <Briefcase className="w-4 h-4 text-gray-400 mr-3" />
+                          <span>{profileForm.role || "Marketing Director"}</span>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Company</label>
+                        <div className="flex items-center text-gray-900">
+                          <Building className="w-4 h-4 text-gray-400 mr-3" />
+                          <span>{company?.name || "No company set"}</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -191,10 +467,112 @@ export default function Settings() {
               
               <div className="text-sm text-gray-600 flex items-center">
                 <Building className="w-4 h-4 mr-2" />
-                <span>Acme Corporation</span>
+                <span>{company?.name || "No company set"}</span>
                 <span className="mx-2">•</span>
                 <Calendar className="w-4 h-4 mr-2" />
                 <span>Joined {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Recently"}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Company Information */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center">
+                  <Building className="w-5 h-5 mr-2" />
+                  Company Information
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Update your company details and business information
+                </p>
+              </div>
+              {!isEditingCompany ? (
+                <Button variant="ghost" onClick={handleEditCompany} className="text-primary hover:text-primary/80">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button 
+                    variant="ghost" 
+                    onClick={handleCancelCompanyEdit}
+                    disabled={updateCompanyMutation.isPending}
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleSaveCompany}
+                    disabled={updateCompanyMutation.isPending}
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {updateCompanyMutation.isPending ? "Saving..." : "Save"}
+                  </Button>
+                </div>
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {isEditingCompany ? (
+                  <>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="companyName">Company Name</Label>
+                      <Input
+                        id="companyName"
+                        value={companyForm.name}
+                        onChange={(e) => setCompanyForm(prev => ({...prev, name: e.target.value}))}
+                        placeholder="Enter company name"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="industry">Industry</Label>
+                      <Input
+                        id="industry"
+                        value={companyForm.industry}
+                        onChange={(e) => setCompanyForm(prev => ({...prev, industry: e.target.value}))}
+                        placeholder="e.g. Technology, Healthcare, Finance"
+                      />
+                    </div>
+                    
+                    <div className="md:col-span-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={companyForm.description}
+                        onChange={(e) => setCompanyForm(prev => ({...prev, description: e.target.value}))}
+                        placeholder="Describe your company's mission, products, or services"
+                        rows={3}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+                      <div className="flex items-center text-gray-900">
+                        <Building className="w-4 h-4 text-gray-400 mr-3" />
+                        <span>{company?.name || "Not set"}</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Industry</label>
+                      <div className="flex items-center text-gray-900">
+                        <Briefcase className="w-4 h-4 text-gray-400 mr-3" />
+                        <span>{company?.industry || "Not specified"}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                      <p className="text-gray-900 text-sm leading-relaxed">
+                        {company?.description || "No description provided"}
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
