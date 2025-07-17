@@ -20,8 +20,6 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: BarChart3, group: "Overview" },
   { name: "My Company", href: "/company", icon: Building, group: "Overview" },
   { name: "Competitive Analysis", href: "/competitive-analysis", icon: Search, group: "AI Tools" },
-  { name: "Positioning Engine", href: "/positioning", icon: Target, group: "AI Tools" },
-  { name: "Content Strategy", href: "/content-strategy", icon: Lightbulb, group: "AI Tools" },
   { name: "Content Creation", href: "/content-creation", icon: PenTool, group: "AI Tools" },
   { name: "Content Calendar", href: "/content-calendar", icon: Calendar, group: "AI Tools" },
   { name: "Settings", href: "/settings", icon: Settings, group: "Account" },

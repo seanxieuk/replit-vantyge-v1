@@ -16,7 +16,8 @@ import {
   Target, 
   TrendingUp, 
   TrendingDown,
-  ArrowRight
+  ArrowRight,
+  Calendar
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -60,7 +61,7 @@ export default function Dashboard() {
   const quickActions = [
     {
       title: "Run Competitive Analysis",
-      description: "Analyze competitor strategies",
+      description: "Analyze competitor strategies and market positioning",
       icon: Search,
       href: "/competitive-analysis",
       bgColor: "bg-blue-50 group-hover:bg-blue-500",
@@ -68,17 +69,17 @@ export default function Dashboard() {
     },
     {
       title: "Generate Content",
-      description: "Create AI-powered content",
+      description: "Create AI-powered marketing content",
       icon: PenTool,
       href: "/content-creation",
       bgColor: "bg-green-50 group-hover:bg-green-500",
       iconColor: "text-green-600 group-hover:text-white",
     },
     {
-      title: "Update Positioning",
-      description: "Refine brand positioning",
-      icon: Target,
-      href: "/positioning",
+      title: "View Content Calendar",
+      description: "Manage your content pipeline",
+      icon: Calendar,
+      href: "/content-calendar",
       bgColor: "bg-purple-50 group-hover:bg-purple-500",
       iconColor: "text-purple-600 group-hover:text-white",
     },
@@ -126,7 +127,7 @@ export default function Dashboard() {
         <div className="space-y-6">
           {/* KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
+            <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -147,7 +148,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -168,7 +169,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -189,7 +190,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -221,18 +222,18 @@ export default function Dashboard() {
               <CardContent className="space-y-3">
                 {quickActions.map((action) => (
                   <Link key={action.title} href={action.href}>
-                    <a className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-primary hover:bg-blue-50 transition-colors group">
+                    <div className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-primary hover:bg-blue-50 transition-all duration-200 group cursor-pointer hover:shadow-md">
                       <div className="flex items-center">
-                        <div className={`w-10 h-10 ${action.bgColor} rounded-lg flex items-center justify-center mr-4 transition-colors`}>
-                          <action.icon className={`w-5 h-5 ${action.iconColor} transition-colors`} />
+                        <div className={`w-10 h-10 ${action.bgColor} rounded-lg flex items-center justify-center mr-4 transition-all duration-200`}>
+                          <action.icon className={`w-5 h-5 ${action.iconColor} transition-all duration-200`} />
                         </div>
                         <div className="text-left">
-                          <p className="font-medium text-gray-900">{action.title}</p>
+                          <p className="font-medium text-gray-900 group-hover:text-primary transition-colors">{action.title}</p>
                           <p className="text-sm text-gray-600">{action.description}</p>
                         </div>
                       </div>
-                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary transition-colors" />
-                    </a>
+                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary transition-all duration-200 group-hover:translate-x-1" />
+                    </div>
                   </Link>
                 ))}
               </CardContent>

@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Copy, Download, CalendarPlus, FileText } from "lucide-react";
+import { Sparkles, Copy, Download, Calendar, FileText } from "lucide-react";
 
 export default function ContentCreationPage() {
   const { toast } = useToast();
@@ -278,7 +278,7 @@ export default function ContentCreationPage() {
                       className="bg-green-600 hover:bg-green-700"
                       size="sm"
                     >
-                      <CalendarPlus className="w-4 h-4 mr-2" />
+                      <Calendar className="w-4 h-4 mr-2" />
                       Add to Calendar
                     </Button>
                   </div>
