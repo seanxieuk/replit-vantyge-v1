@@ -11,27 +11,27 @@ export default function Landing() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center pb-2">
-          <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Brain className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-center space-x-3 mb-6">
+            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Brain className="w-7 h-7 text-white" />
             </div>
             <span className="text-2xl font-bold text-gray-900">MarketingAI</span>
           </div>
-          <CardTitle className="text-xl text-gray-900">Welcome</CardTitle>
+          <CardTitle className="text-xl text-gray-900">Welcome Back</CardTitle>
           <p className="text-gray-600 text-sm mt-2">
-            Sign in to access your AI-powered marketing platform
+            Sign in to your account to access the marketing platform
           </p>
         </CardHeader>
-        <CardContent className="pt-4">
+        <CardContent className="pt-6">
           <Button 
             onClick={handleLogin} 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
             size="lg"
           >
-            Sign In / Sign Up
+            Sign In
           </Button>
           <p className="text-xs text-gray-500 text-center mt-4">
-            New users will be automatically registered on first sign-in
+            For existing users only. Contact support for access requests.
           </p>
         </CardContent>
       </Card>
