@@ -75,7 +75,7 @@ function RecommendationCard({ recommendation }: { recommendation: PositioningRec
       <CardContent className="space-y-4">
         <p className="text-gray-700">{recommendation.description}</p>
         
-        {recommendation.keyPoints.length > 0 && (
+        {recommendation.keyPoints && recommendation.keyPoints.length > 0 && (
           <div>
             <h4 className="font-medium text-gray-900 mb-2">Key Points:</h4>
             <ul className="space-y-1">
@@ -96,7 +96,7 @@ function RecommendationCard({ recommendation }: { recommendation: PositioningRec
           </div>
         )}
         
-        {recommendation.differentiators.length > 0 && (
+        {recommendation.differentiators && recommendation.differentiators.length > 0 && (
           <div>
             <h4 className="font-medium text-gray-900 mb-2">Differentiators:</h4>
             <div className="flex flex-wrap gap-2">
@@ -107,7 +107,7 @@ function RecommendationCard({ recommendation }: { recommendation: PositioningRec
           </div>
         )}
         
-        {recommendation.targetSegments.length > 0 && (
+        {recommendation.targetSegments && recommendation.targetSegments.length > 0 && (
           <div>
             <h4 className="font-medium text-gray-900 mb-2">Target Segments:</h4>
             <div className="flex flex-wrap gap-2">

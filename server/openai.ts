@@ -315,6 +315,177 @@ export interface CompetitiveLandscapeAnalysis {
   strategicImplications: string[];
 }
 
+export interface BlogIdea {
+  id: string;
+  title: string;
+  description: string;
+  keywords: string[];
+  estimatedLength: string;
+  difficulty: string;
+  targetAudience: string;
+  contentPillars: string[];
+  seoScore: number;
+  rationale: string;
+}
+
+export interface GeneratedArticle {
+  title: string;
+  content: string;
+  metaDescription: string;
+  keywords: string[];
+  wordCount: number;
+}
+
+export async function generateBlogIdeas(
+  company: any,
+  competitors: any[] = [],
+  positioningRecommendations: any[] = []
+): Promise<BlogIdea[]> {
+  try {
+    const competitorContext = competitors.length > 0 
+      ? `\n\nCompetitive Context:\n${competitors.map(comp => `- ${comp.name}: ${comp.description || 'No description'}`).join('\n')}`
+      : '';
+
+    const positioningContext = positioningRecommendations.length > 0
+      ? `\n\nPositioning Insights:\n${positioningRecommendations.map(rec => `- ${rec.title}: ${rec.description}`).join('\n')}`
+      : '';
+
+    const prompt = `You are a content marketing expert. Generate 5 highly relevant blog topic ideas for the following company:
+
+Company: ${company.name}
+Industry: ${company.industry || 'Not specified'}
+Description: ${company.description || 'No description provided'}
+Target Market: ${company.targetMarket || 'Not specified'}
+Value Proposition: ${company.valueProposition || 'Not specified'}
+${competitorContext}${positioningContext}
+
+Generate 5 blog topic ideas that are:
+1. Highly relevant to the company's industry and target market
+2. Aligned with their value proposition and positioning
+3. Differentiated from competitors (if competitor data is available)
+4. SEO-optimized and search-friendly
+5. Valuable to their target audience
+
+For each idea, provide a rationale explaining why this topic is specifically relevant to this company.
+
+Return your response as a JSON array with this exact structure:
+[
+  {
+    "id": "unique-id-1",
+    "title": "Compelling blog title",
+    "description": "Brief description of what the article will cover",
+    "keywords": ["keyword1", "keyword2", "keyword3", "keyword4"],
+    "estimatedLength": "1200-1500 words",
+    "difficulty": "Easy|Medium|Hard",
+    "targetAudience": "Specific audience description",
+    "contentPillars": ["pillar1", "pillar2", "pillar3"],
+    "seoScore": 85,
+    "rationale": "Explanation of why this topic is perfect for this company"
+  }
+]`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      messages: [
+        {
+          role: "system",
+          content: "You are a content marketing expert specializing in creating targeted blog content strategies. Always respond with valid JSON."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.7,
+      max_tokens: 2000
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || '[]');
+    return Array.isArray(result) ? result : result.blogIdeas || [];
+  } catch (error) {
+    console.error("Error generating blog ideas:", error);
+    throw new Error("Failed to generate blog ideas");
+  }
+}
+
+export async function generateFullArticle(
+  idea: BlogIdea,
+  company: any,
+  competitors: any[] = [],
+  positioningRecommendations: any[] = []
+): Promise<GeneratedArticle> {
+  try {
+    const competitorContext = competitors.length > 0 
+      ? `\n\nCompetitive Context (use this to differentiate the article):\n${competitors.map(comp => `- ${comp.name}: ${comp.description || 'No description'}`).join('\n')}`
+      : '';
+
+    const positioningContext = positioningRecommendations.length > 0
+      ? `\n\nPositioning Insights (incorporate these into the article):\n${positioningRecommendations.map(rec => `- ${rec.title}: ${rec.description}`).join('\n')}`
+      : '';
+
+    const prompt = `You are a professional content writer. Write a comprehensive, high-quality blog article based on the following:
+
+Article Topic: ${idea.title}
+Description: ${idea.description}
+Target Audience: ${idea.targetAudience}
+Estimated Length: ${idea.estimatedLength}
+Keywords to Include: ${idea.keywords.join(', ')}
+Content Pillars: ${idea.contentPillars.join(', ')}
+
+Company Context:
+- Company: ${company.name}
+- Industry: ${company.industry || 'Not specified'}
+- Description: ${company.description || 'No description provided'}
+- Target Market: ${company.targetMarket || 'Not specified'}
+- Value Proposition: ${company.valueProposition || 'Not specified'}
+${competitorContext}${positioningContext}
+
+Write a complete, professional blog article that:
+1. Is engaging and valuable to the target audience
+2. Naturally incorporates the specified keywords
+3. Reflects the company's expertise and value proposition
+4. Differentiates from competitors (if applicable)
+5. Includes practical insights and actionable advice
+6. Has a clear structure with headings and subheadings
+7. Is SEO-optimized and well-formatted
+
+Include a compelling meta description and extract the final keyword list.
+
+Return your response as JSON with this exact structure:
+{
+  "title": "Final article title",
+  "content": "Full article content with proper formatting and line breaks",
+  "metaDescription": "SEO-optimized meta description (150-160 characters)",
+  "keywords": ["final", "keyword", "list"],
+  "wordCount": 1250
+}`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      messages: [
+        {
+          role: "system",
+          content: "You are a professional content writer who creates engaging, SEO-optimized blog articles. Always respond with valid JSON."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.7,
+      max_tokens: 4000
+    });
+
+    const result = JSON.parse(response.choices[0].message.content || '{}');
+    return result;
+  } catch (error) {
+    console.error("Error generating article:", error);
+    throw new Error("Failed to generate article");
+  }
+}
+
 export async function analyzeCompetitiveLandscape(
   company: any,
   competitors: any[]

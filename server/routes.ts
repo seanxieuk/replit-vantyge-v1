@@ -8,7 +8,7 @@ import {
   insertContentItemSchema,
   insertContentStrategySchema 
 } from "@shared/schema";
-import { analyzeCompetitor, generateContent, generateContentStrategy, analyzePositioning, analyzeCompetitiveLandscape } from "./openai";
+import { analyzeCompetitor, generateContent, generateContentStrategy, analyzePositioning, analyzeCompetitiveLandscape, generateBlogIdeas, generateFullArticle } from "./openai";
 import { mozApi } from "./mozApi";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -386,24 +386,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/blog-ideas', isAuthenticated, async (req: any, res) => {
     try {
-      // Mock generating blog ideas
-      const ideas = [
-        {
-          id: "1",
-          title: "The Future of AI in Your Industry",
-          description: "Explore how artificial intelligence is transforming business operations",
-          keywords: ["AI", "automation", "innovation", "efficiency"],
-          estimatedLength: "1200-1500 words",
-          difficulty: "Medium",
-          targetAudience: "Business leaders and decision makers",
-          contentPillars: ["Technology", "Innovation", "Business Strategy"],
-          seoScore: 85
-        }
-      ];
-      res.json(ideas);
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(400).json({ message: "Company profile not found. Please complete your company setup first." });
+      }
+
+      // Get optional data to enhance topic generation
+      const competitors = await storage.getCompetitorsByCompanyId(company.id);
+      const positioningRecommendations = await storage.getPositioningRecommendations(company.id);
+      
+      // Generate AI-powered blog ideas
+      const blogIdeas = await generateBlogIdeas(company, competitors, positioningRecommendations);
+      
+      res.json(blogIdeas);
     } catch (error) {
       console.error("Error generating blog ideas:", error);
       res.status(500).json({ message: "Failed to generate blog ideas" });
+    }
+  });
+
+  // Generate full article endpoint
+  app.post('/api/generate-article', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { idea } = req.body;
+      
+      if (!idea) {
+        return res.status(400).json({ message: "Blog idea is required" });
+      }
+
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(400).json({ message: "Company profile not found. Please complete your company setup first." });
+      }
+
+      // Get optional data to enhance article generation
+      const competitors = await storage.getCompetitorsByCompanyId(company.id);
+      const positioningRecommendations = await storage.getPositioningRecommendations(company.id);
+      
+      // Generate AI-powered full article
+      const generatedArticle = await generateFullArticle(idea, company, competitors, positioningRecommendations);
+      
+      res.json(generatedArticle);
+    } catch (error) {
+      console.error("Error generating article:", error);
+      res.status(500).json({ message: "Failed to generate article" });
     }
   });
 

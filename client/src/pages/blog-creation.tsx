@@ -6,23 +6,11 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   PenTool, 
-  Plus, 
   Eye, 
-  Edit,
-  Trash2,
-  Download,
-  Copy,
-  Calendar,
   Target,
   TrendingUp,
   FileText,
@@ -30,9 +18,11 @@ import {
   Brain,
   Sparkles,
   CheckCircle,
-  Clock
+  Clock,
+  Copy,
+  Download,
+  Loader2
 } from "lucide-react";
-import type { ContentItem, InsertContentItem } from "@shared/schema";
 
 interface Header {
   title: string;
@@ -62,6 +52,15 @@ interface BlogIdea {
   targetAudience: string;
   contentPillars: string[];
   seoScore: number;
+  rationale: string;
+}
+
+interface GeneratedArticle {
+  title: string;
+  content: string;
+  metaDescription: string;
+  keywords: string[];
+  wordCount: number;
 }
 
 function BlogIdeaCard({ 
@@ -89,52 +88,51 @@ function BlogIdeaCard({
   };
 
   return (
-    <Card className="relative hover:shadow-md transition-shadow">
+    <Card className="relative hover:shadow-lg transition-shadow">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg leading-tight">{idea.title}</CardTitle>
-            <p className="text-sm text-gray-600 mt-2">{idea.description}</p>
+            <CardTitle className="text-lg mb-2">{idea.title}</CardTitle>
+            <p className="text-sm text-gray-600 mb-3">{idea.description}</p>
+            <p className="text-xs text-gray-500 mb-3 italic">{idea.rationale}</p>
           </div>
           <div className="flex items-center gap-2 ml-4">
             <Badge className={getDifficultyColor(idea.difficulty)}>
               {idea.difficulty}
             </Badge>
-            <Badge variant="outline">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              <span className={getSeoScoreColor(idea.seoScore)}>
+            <div className="flex items-center gap-1">
+              <TrendingUp className="h-3 w-3" />
+              <span className={`text-sm font-medium ${getSeoScoreColor(idea.seoScore)}`}>
                 {idea.seoScore}%
               </span>
-            </Badge>
+            </div>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
-            <span className="font-medium text-gray-700">Target Audience:</span>
+            <div className="flex items-center gap-2 mb-2">
+              <Target className="h-4 w-4 text-blue-600" />
+              <span className="font-medium">Target Audience</span>
+            </div>
             <p className="text-gray-600">{idea.targetAudience}</p>
           </div>
           <div>
-            <span className="font-medium text-gray-700">Est. Length:</span>
+            <div className="flex items-center gap-2 mb-2">
+              <Clock className="h-4 w-4 text-green-600" />
+              <span className="font-medium">Estimated Length</span>
+            </div>
             <p className="text-gray-600">{idea.estimatedLength}</p>
           </div>
         </div>
-        
+
         <div>
-          <span className="font-medium text-gray-700 text-sm">Keywords:</span>
-          <div className="flex flex-wrap gap-1 mt-1">
-            {idea.keywords.map((keyword, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {keyword}
-              </Badge>
-            ))}
+          <div className="flex items-center gap-2 mb-2">
+            <FileText className="h-4 w-4 text-purple-600" />
+            <span className="font-medium text-sm">Content Pillars</span>
           </div>
-        </div>
-        
-        <div>
-          <span className="font-medium text-gray-700 text-sm">Content Pillars:</span>
-          <div className="flex flex-wrap gap-1 mt-1">
+          <div className="flex flex-wrap gap-2">
             {idea.contentPillars.map((pillar, index) => (
               <Badge key={index} variant="outline" className="text-xs">
                 {pillar}
@@ -142,10 +140,22 @@ function BlogIdeaCard({
             ))}
           </div>
         </div>
-        
-        <Separator />
-        
-        <div className="flex justify-end">
+
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Lightbulb className="h-4 w-4 text-yellow-600" />
+            <span className="font-medium text-sm">Keywords</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {idea.keywords.map((keyword, index) => (
+              <Badge key={index} variant="secondary" className="text-xs">
+                {keyword}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        <div className="pt-4 border-t">
           <Button
             onClick={() => onGenerate(idea)}
             disabled={isGenerating}
@@ -153,8 +163,8 @@ function BlogIdeaCard({
           >
             {isGenerating ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Generating...
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Generating Article...
               </>
             ) : (
               <>
@@ -169,92 +179,100 @@ function BlogIdeaCard({
   );
 }
 
-function ContentCard({ 
-  content, 
-  onEdit, 
-  onDelete, 
-  onView 
+function ArticleModal({ 
+  article, 
+  isOpen, 
+  onClose 
 }: {
-  content: ContentItem;
-  onEdit: () => void;
-  onDelete: () => void;
-  onView: () => void;
+  article: GeneratedArticle | null;
+  isOpen: boolean;
+  onClose: () => void;
 }) {
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'published': return 'bg-green-100 text-green-800';
-      case 'review': return 'bg-yellow-100 text-yellow-800';
-      case 'draft': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const { toast } = useToast();
+
+  const handleCopy = () => {
+    if (article) {
+      navigator.clipboard.writeText(article.content);
+      toast({
+        title: "Copied to clipboard",
+        description: "Article content has been copied to your clipboard",
+      });
+    }
+  };
+
+  const handleDownload = () => {
+    if (article) {
+      const blob = new Blob([article.content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${article.title.replace(/[^a-zA-Z0-9]/g, '-')}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({
+        title: "Downloaded",
+        description: "Article has been downloaded as a text file",
+      });
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-lg">{content.title}</CardTitle>
-            <div className="flex items-center gap-2 mt-2">
-              <Badge className={getStatusColor(content.status)}>
-                {content.status}
-              </Badge>
-              <Badge variant="outline">
-                {content.wordCount} words
-              </Badge>
-              {content.tone && (
-                <Badge variant="secondary">
-                  {content.tone}
-                </Badge>
-              )}
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            {article?.title || "Generated Article"}
+          </DialogTitle>
+        </DialogHeader>
+        
+        {article && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <span>Word Count: {article.wordCount}</span>
+                <span>Keywords: {article.keywords.length}</span>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleCopy}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleDownload}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+            </div>
+
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <h4 className="font-medium text-blue-900 mb-2">Meta Description</h4>
+              <p className="text-sm text-blue-800">{article.metaDescription}</p>
+            </div>
+
+            <div className="p-4 bg-green-50 rounded-lg">
+              <h4 className="font-medium text-green-900 mb-2">SEO Keywords</h4>
+              <div className="flex flex-wrap gap-2">
+                {article.keywords.map((keyword, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs">
+                    {keyword}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="border rounded-lg p-4">
+              <h4 className="font-medium mb-4">Article Content</h4>
+              <div className="prose max-w-none text-sm leading-relaxed whitespace-pre-wrap">
+                {article.content}
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={onView}>
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={onEdit}>
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={onDelete}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {content.keywords && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {content.keywords.split(',').map((keyword, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {keyword.trim()}
-              </Badge>
-            ))}
-          </div>
         )}
-        
-        <div className="text-sm text-gray-600">
-          {content.scheduledFor && (
-            <p className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              Scheduled for: {new Date(content.scheduledFor).toLocaleDateString()}
-            </p>
-          )}
-          {content.publishedAt && (
-            <p className="flex items-center gap-1">
-              <CheckCircle className="h-3 w-3" />
-              Published: {new Date(content.publishedAt).toLocaleDateString()}
-            </p>
-          )}
-          {!content.publishedAt && !content.scheduledFor && (
-            <p className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              Created: {new Date(content.createdAt).toLocaleDateString()}
-            </p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -262,12 +280,9 @@ export default function BlogCreationPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  const [activeTab, setActiveTab] = useState("ideas");
-  const [generatingIdeas, setGeneratingIdeas] = useState(false);
-  const [generatingContent, setGeneratingContent] = useState<string | null>(null);
-  const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
-  const [showContentDialog, setShowContentDialog] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState<GeneratedArticle | null>(null);
+  const [showArticleModal, setShowArticleModal] = useState(false);
+  const [generatingArticle, setGeneratingArticle] = useState(false);
 
   const { data: company } = useQuery({
     queryKey: ["/api/company"],
@@ -279,27 +294,29 @@ export default function BlogCreationPage() {
     enabled: !!user,
   });
 
-  const { data: contentItems, isLoading } = useQuery<ContentItem[]>({
-    queryKey: ["/api/content"],
+  const { data: positioningRecommendations } = useQuery({
+    queryKey: ["/api/positioning-recommendations"],
     enabled: !!user,
+    retry: false,
   });
 
-  const { data: blogIdeas } = useQuery<BlogIdea[]>({
+  const { data: blogIdeas, isLoading: isLoadingIdeas } = useQuery<BlogIdea[]>({
     queryKey: ["/api/blog-ideas"],
-    enabled: !!user,
+    enabled: !!user && !!company,
     retry: false,
   });
 
   const generateIdeasMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", "/api/blog-ideas", {});
+      const response = await apiRequest('POST', '/api/blog-ideas', {});
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Success",
-        description: "Blog ideas generated successfully",
+        description: "Blog topic ideas generated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/blog-ideas"] });
+      queryClient.setQueryData(["/api/blog-ideas"], data);
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -321,25 +338,18 @@ export default function BlogCreationPage() {
     },
   });
 
-  const generateContentMutation = useMutation({
+  const generateArticleMutation = useMutation({
     mutationFn: async (idea: BlogIdea) => {
-      return await apiRequest("POST", "/api/content", {
-        title: idea.title,
-        type: "blog",
-        keywords: idea.keywords.join(", "),
-        tone: "professional",
-        status: "draft"
-      });
+      const response = await apiRequest('POST', '/api/generate-article', { idea });
+      return response.json();
     },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Blog article generated successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/content"] });
-      setActiveTab("content");
+    onSuccess: (data) => {
+      setSelectedArticle(data);
+      setShowArticleModal(true);
+      setGeneratingArticle(false);
     },
     onError: (error) => {
+      setGeneratingArticle(false);
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
@@ -353,239 +363,195 @@ export default function BlogCreationPage() {
       }
       toast({
         title: "Error",
-        description: "Failed to generate blog article",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteContentMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return await apiRequest("DELETE", `/api/content/${id}`);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Content deleted successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/content"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to delete content",
+        description: "Failed to generate article",
         variant: "destructive",
       });
     },
   });
 
   const handleGenerateIdeas = () => {
-    setGeneratingIdeas(true);
-    generateIdeasMutation.mutate(undefined, {
-      onSettled: () => setGeneratingIdeas(false)
-    });
+    generateIdeasMutation.mutate();
   };
 
-  const handleGenerateContent = (idea: BlogIdea) => {
-    setGeneratingContent(idea.id);
-    generateContentMutation.mutate(idea, {
-      onSettled: () => setGeneratingContent(null)
-    });
+  const handleGenerateArticle = (idea: BlogIdea) => {
+    setGeneratingArticle(true);
+    generateArticleMutation.mutate(idea);
   };
 
-  const handleViewContent = (content: ContentItem) => {
-    setSelectedContent(content);
-    setShowContentDialog(true);
-  };
-
-  const hasPrerequisites = company && competitors && competitors.length > 0;
+  const hasPrerequisites = company;
+  const hasCompetitiveData = competitors && competitors.length > 0;
+  const hasPositioningData = positioningRecommendations && positioningRecommendations.length > 0;
 
   return (
     <>
       <Header 
         title="Blog Creation" 
-        subtitle="AI-powered blog content generation using your company context and competitive insights" 
+        subtitle="AI-powered blog topic generation and article writing based on your company profile and competitive intelligence" 
       />
 
       <main className="flex-1 overflow-y-auto p-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="ideas">Content Ideas</TabsTrigger>
-            <TabsTrigger value="content">Generated Content</TabsTrigger>
-          </TabsList>
+        <div className="space-y-6">
+          {/* Prerequisites Check */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5" />
+                Data Sources
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center gap-3">
+                  {company ? (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />
+                  )}
+                  <div>
+                    <span className={company ? "text-green-700 font-medium" : "text-gray-500"}>
+                      Company Profile
+                    </span>
+                    <p className="text-xs text-gray-500">Required for topic generation</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  {hasCompetitiveData ? (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />
+                  )}
+                  <div>
+                    <span className={hasCompetitiveData ? "text-green-700 font-medium" : "text-gray-500"}>
+                      Competitive Analysis
+                    </span>
+                    <p className="text-xs text-gray-500">Enhances topic relevance</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  {hasPositioningData ? (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />
+                  )}
+                  <div>
+                    <span className={hasPositioningData ? "text-green-700 font-medium" : "text-gray-500"}>
+                      Positioning Insights
+                    </span>
+                    <p className="text-xs text-gray-500">Refines messaging approach</p>
+                  </div>
+                </div>
+              </div>
 
-          <TabsContent value="ideas" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">AI-Generated Blog Ideas</h2>
-                <p className="text-gray-600 mt-1">
-                  Content suggestions based on your company positioning and competitive analysis
+              {!hasPrerequisites && (
+                <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    Complete your company profile to enable AI-powered blog topic generation.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Topic Generation */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="h-5 w-5" />
+                AI Topic Generator
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {hasPrerequisites ? (
+                <div className="text-center">
+                  <div className="mb-4">
+                    <p className="text-gray-600 mb-2">
+                      Generate personalized blog topics based on your company profile
+                      {hasCompetitiveData && ", competitive analysis"}
+                      {hasPositioningData && ", and positioning insights"}.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleGenerateIdeas}
+                    disabled={generateIdeasMutation.isPending}
+                    size="lg"
+                    className="px-8"
+                  >
+                    {generateIdeasMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating Ideas...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate Topic Ideas
+                      </>
+                    )}
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Brain className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Company Profile Required</h3>
+                  <p className="text-gray-600 mb-4">
+                    Complete your company setup to unlock AI-powered blog topic generation.
+                  </p>
+                  <Button variant="outline" onClick={() => window.location.href = "/company"}>
+                    Complete Company Setup
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Generated Topics */}
+          {blogIdeas && blogIdeas.length > 0 && (
+            <div>
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">Generated Topic Ideas</h2>
+                <p className="text-gray-600">
+                  AI-generated blog topics tailored to your company and market positioning
                 </p>
               </div>
-              <Button
-                onClick={handleGenerateIdeas}
-                disabled={!hasPrerequisites || generatingIdeas}
-              >
-                {generatingIdeas ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Brain className="h-4 w-4 mr-2" />
-                    Generate Ideas
-                  </>
-                )}
-              </Button>
-            </div>
-
-            {!hasPrerequisites && (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <Lightbulb className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Setup Required</h3>
-                  <p className="text-gray-600 mb-4">
-                    Complete your company information and competitive analysis to generate relevant blog ideas.
-                  </p>
-                  <div className="flex justify-center gap-4">
-                    <Button variant="outline" onClick={() => window.location.href = "/company"}>
-                      Complete Company Setup
-                    </Button>
-                    <Button variant="outline" onClick={() => window.location.href = "/competitive-analysis"}>
-                      Add Competitors
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {blogIdeas && blogIdeas.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {blogIdeas.map((idea) => (
                   <BlogIdeaCard
                     key={idea.id}
                     idea={idea}
-                    onGenerate={handleGenerateContent}
-                    isGenerating={generatingContent === idea.id}
+                    onGenerate={handleGenerateArticle}
+                    isGenerating={generatingArticle}
                   />
                 ))}
               </div>
-            )}
+            </div>
+          )}
 
-            {hasPrerequisites && (!blogIdeas || blogIdeas.length === 0) && (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Ideas Generated Yet</h3>
-                  <p className="text-gray-600 mb-4">
-                    Generate AI-powered blog ideas tailored to your company and market positioning.
-                  </p>
-                  <Button onClick={handleGenerateIdeas} disabled={generatingIdeas}>
-                    <Brain className="h-4 w-4 mr-2" />
-                    Generate Ideas
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="content" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">Generated Content</h2>
-                <p className="text-gray-600 mt-1">
-                  Manage your AI-generated blog articles and content
+          {hasPrerequisites && (!blogIdeas || blogIdeas.length === 0) && !isLoadingIdeas && !generateIdeasMutation.isPending && (
+            <Card>
+              <CardContent className="text-center py-12">
+                <Lightbulb className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Topics Generated Yet</h3>
+                <p className="text-gray-600 mb-4">
+                  Click "Generate Topic Ideas" to create personalized blog topics for your company.
                 </p>
-              </div>
-              <Button onClick={() => setActiveTab("ideas")}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Content
-              </Button>
-            </div>
-
-            {contentItems && contentItems.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {contentItems.map((content) => (
-                  <ContentCard
-                    key={content.id}
-                    content={content}
-                    onEdit={() => {}}
-                    onDelete={() => deleteContentMutation.mutate(content.id)}
-                    onView={() => handleViewContent(content)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <PenTool className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Content Created Yet</h3>
-                  <p className="text-gray-600 mb-4">
-                    Generate your first blog article from the content ideas tab.
-                  </p>
-                  <Button onClick={() => setActiveTab("ideas")}>
-                    <Lightbulb className="h-4 w-4 mr-2" />
-                    Browse Ideas
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
-
-        {/* Content View Dialog */}
-        <Dialog open={showContentDialog} onOpenChange={setShowContentDialog}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{selectedContent?.title}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              {selectedContent && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <Badge className={selectedContent.status === 'published' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                      {selectedContent.status}
-                    </Badge>
-                    <Badge variant="outline">
-                      {selectedContent.wordCount} words
-                    </Badge>
-                    {selectedContent.tone && (
-                      <Badge variant="secondary">
-                        {selectedContent.tone}
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="prose max-w-none">
-                    <div className="whitespace-pre-wrap text-gray-700">
-                      {selectedContent.content || "Content not available"}
-                    </div>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => {
-                      navigator.clipboard.writeText(selectedContent.content || "");
-                      toast({ title: "Success", description: "Content copied to clipboard" });
-                    }}>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy
-                    </Button>
-                    <Button variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </Button>
-                  </div>
-                </>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
+                <Button onClick={handleGenerateIdeas} disabled={generateIdeasMutation.isPending}>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Topic Ideas
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </main>
+
+      <ArticleModal 
+        article={selectedArticle}
+        isOpen={showArticleModal}
+        onClose={() => setShowArticleModal(false)}
+      />
     </>
   );
 }

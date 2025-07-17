@@ -50,6 +50,9 @@ export interface IStorage {
   // Content strategy operations
   getContentStrategiesByCompanyId(companyId: number): Promise<ContentStrategy[]>;
   createContentStrategy(strategy: InsertContentStrategy): Promise<ContentStrategy>;
+  
+  // Positioning recommendations (mock implementation for now)
+  getPositioningRecommendations(companyId: number): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -147,6 +150,13 @@ export class DatabaseStorage implements IStorage {
   async createContentStrategy(strategy: InsertContentStrategy): Promise<ContentStrategy> {
     const [newStrategy] = await db.insert(contentStrategies).values(strategy).returning();
     return newStrategy;
+  }
+
+  // Positioning recommendations (mock implementation for now)
+  async getPositioningRecommendations(companyId: number): Promise<any[]> {
+    // For now, return empty array since we don't have a positioning recommendations table
+    // This could be extended in the future to store and retrieve actual positioning recommendations
+    return [];
   }
 }
 

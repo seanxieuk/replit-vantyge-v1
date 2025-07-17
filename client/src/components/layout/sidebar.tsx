@@ -23,7 +23,7 @@ const navigation = [
   { name: "Competitive Analysis", href: "/competitive-analysis", icon: Search, group: "AI Tools" },
   { name: "Positioning Workshops", href: "/positioning-workshops", icon: Target, group: "AI Tools" },
   { name: "Blog Creation", href: "/blog-creation", icon: PenTool, group: "AI Tools" },
-  { name: "Content Creation", href: "/content-creation", icon: Lightbulb, group: "AI Tools" },
+
   { name: "Content Calendar", href: "/content-calendar", icon: Calendar, group: "AI Tools" },
   { name: "Settings", href: "/settings", icon: Settings, group: "Account" },
 ];
