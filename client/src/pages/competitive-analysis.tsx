@@ -224,6 +224,13 @@ export default function CompetitiveAnalysisPage() {
     enabled: !!user,
   });
 
+  // Query for existing competitive landscape analysis
+  const { data: existingLandscapeAnalysis } = useQuery({
+    queryKey: ["/api/competitive-landscape-analysis"],
+    enabled: !!user,
+    retry: false,
+  });
+
   const addCompetitorMutation = useMutation({
     mutationFn: async (data: Partial<InsertCompetitor>) => {
       return await apiRequest("POST", "/api/competitors", data);
@@ -344,6 +351,10 @@ export default function CompetitiveAnalysisPage() {
     return analyses?.find(analysis => analysis.competitorId === competitorId);
   };
 
+  // Use saved analysis if available, otherwise use real-time analysis
+  const displayAnalysis = existingLandscapeAnalysis || landscapeAnalysis;
+  const showAnalysisResults = displayAnalysis && (existingLandscapeAnalysis || analysisType === 'competitive');
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -457,7 +468,7 @@ export default function CompetitiveAnalysisPage() {
           )}
 
           {/* Competitive Landscape Analysis Results */}
-          {landscapeAnalysis && analysisType === 'competitive' && (
+          {showAnalysisResults && (
             <div className="space-y-6">
               <div className="border-t pt-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Competitive Landscape Analysis</h2>
@@ -471,7 +482,7 @@ export default function CompetitiveAnalysisPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-700">{landscapeAnalysis.summary || 'Analysis summary not available'}</p>
+                    <p className="text-gray-700">{displayAnalysis.summary || 'Analysis summary not available'}</p>
                   </CardContent>
                 </Card>
 
@@ -484,11 +495,11 @@ export default function CompetitiveAnalysisPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {landscapeAnalysis.competitivePosition && (
+                    {displayAnalysis.competitivePosition && (
                       <>
                         <div className="mb-4">
                           <h4 className="font-medium text-gray-900 mb-2">Market Position</h4>
-                          <p className="text-gray-700">{landscapeAnalysis.competitivePosition.marketPosition}</p>
+                          <p className="text-gray-700">{displayAnalysis.competitivePosition.marketPosition}</p>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -498,7 +509,7 @@ export default function CompetitiveAnalysisPage() {
                               Strengths
                             </h4>
                             <ul className="space-y-1">
-                              {landscapeAnalysis.competitivePosition.strengths?.map((strength: string, index: number) => (
+                              {displayAnalysis.competitivePosition.strengths?.map((strength: string, index: number) => (
                                 <li key={index} className="flex items-start gap-2 text-sm">
                                   <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
                                   {strength}
@@ -513,7 +524,7 @@ export default function CompetitiveAnalysisPage() {
                               Weaknesses
                             </h4>
                             <ul className="space-y-1">
-                              {landscapeAnalysis.competitivePosition.weaknesses?.map((weakness: string, index: number) => (
+                              {displayAnalysis.competitivePosition.weaknesses?.map((weakness: string, index: number) => (
                                 <li key={index} className="flex items-start gap-2 text-sm">
                                   <AlertTriangle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
                                   {weakness}
@@ -528,7 +539,7 @@ export default function CompetitiveAnalysisPage() {
                               Opportunities
                             </h4>
                             <ul className="space-y-1">
-                              {landscapeAnalysis.competitivePosition.opportunities?.map((opportunity: string, index: number) => (
+                              {displayAnalysis.competitivePosition.opportunities?.map((opportunity: string, index: number) => (
                                 <li key={index} className="flex items-start gap-2 text-sm">
                                   <TrendingUp className="h-3 w-3 text-blue-500 mt-0.5 flex-shrink-0" />
                                   {opportunity}
@@ -543,7 +554,7 @@ export default function CompetitiveAnalysisPage() {
                               Threats
                             </h4>
                             <ul className="space-y-1">
-                              {landscapeAnalysis.competitivePosition.threats?.map((threat: string, index: number) => (
+                              {displayAnalysis.competitivePosition.threats?.map((threat: string, index: number) => (
                                 <li key={index} className="flex items-start gap-2 text-sm">
                                   <Shield className="h-3 w-3 text-orange-500 mt-0.5 flex-shrink-0" />
                                   {threat}
@@ -567,7 +578,7 @@ export default function CompetitiveAnalysisPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {landscapeAnalysis.competitorInsights?.map((insight: any) => (
+                      {displayAnalysis.competitorInsights?.map((insight: any) => (
                         <div key={insight.id} className="border rounded-lg p-4">
                           <div className="flex items-start justify-between mb-2">
                             <h4 className="font-medium text-gray-900">{insight.name}</h4>
@@ -593,7 +604,7 @@ export default function CompetitiveAnalysisPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {landscapeAnalysis.recommendations?.map((rec: any) => (
+                      {displayAnalysis.recommendations?.map((rec: any) => (
                         <div key={rec.id} className="border rounded-lg p-4">
                           <div className="flex items-start justify-between mb-2">
                             <h4 className="font-medium text-gray-900">{rec.title}</h4>

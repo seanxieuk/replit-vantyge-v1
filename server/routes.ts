@@ -437,6 +437,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get existing competitive landscape analysis
+  app.get('/api/competitive-landscape-analysis', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(400).json({ message: "Company not found" });
+      }
+
+      const existingAnalysis = await storage.getCompetitiveLandscapeAnalysis(company.id);
+      res.json(existingAnalysis);
+    } catch (error) {
+      console.error("Error fetching competitive landscape analysis:", error);
+      res.status(500).json({ message: "Failed to fetch analysis" });
+    }
+  });
+
   // Competitive landscape analysis endpoint
   app.post('/api/competitive-landscape-analysis', isAuthenticated, async (req: any, res) => {
     try {
@@ -455,6 +473,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Use OpenAI to analyze competitive landscape
       const analysis = await analyzeCompetitiveLandscape(company, competitors);
+      
+      // Save the analysis results to the database
+      await storage.saveCompetitiveLandscapeAnalysis(company.id, analysis);
       
       res.json(analysis);
     } catch (error) {

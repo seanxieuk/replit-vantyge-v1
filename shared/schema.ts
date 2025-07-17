@@ -114,6 +114,18 @@ export const contentStrategies = pgTable("content_strategies", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Competitive landscape analysis results
+export const competitiveLandscapeAnalyses = pgTable("competitive_landscape_analyses", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  summary: text("summary").notNull(),
+  keyInsights: text("key_insights").array(),
+  strengthsWeaknesses: text("strengths_weaknesses"),
+  marketOpportunities: text("market_opportunities").array(),
+  strategicImplications: text("strategic_implications").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Schema exports
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -155,3 +167,10 @@ export const insertCompetitiveAnalysisSchema = createInsertSchema(competitiveAna
   analyzedAt: true,
 });
 export type InsertCompetitiveAnalysis = z.infer<typeof insertCompetitiveAnalysisSchema>;
+
+export type CompetitiveLandscapeAnalysis = typeof competitiveLandscapeAnalyses.$inferSelect;
+export const insertCompetitiveLandscapeAnalysisSchema = createInsertSchema(competitiveLandscapeAnalyses).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertCompetitiveLandscapeAnalysis = z.infer<typeof insertCompetitiveLandscapeAnalysisSchema>;

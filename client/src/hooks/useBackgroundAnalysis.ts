@@ -35,8 +35,7 @@ export function useBackgroundAnalysis() {
 
   const competitiveLandscapeMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/competitive-landscape-analysis', {});
-      return response.json();
+      return await apiRequest('POST', '/api/competitive-landscape-analysis', {});
     },
     onMutate: () => {
       updateGlobalState({ 
@@ -51,7 +50,9 @@ export function useBackgroundAnalysis() {
         results: data, 
         analysisType: 'competitive' 
       });
+      // Invalidate both competitive analyses and landscape analysis queries
       queryClient.invalidateQueries({ queryKey: ['/api/competitive-analyses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/competitive-landscape-analysis'] });
     },
     onError: (error: any) => {
       updateGlobalState({ 

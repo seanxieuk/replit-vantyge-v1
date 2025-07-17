@@ -53,6 +53,10 @@ export interface IStorage {
   
   // Positioning recommendations (mock implementation for now)
   getPositioningRecommendations(companyId: number): Promise<any[]>;
+  
+  // Competitive landscape analysis results
+  getCompetitiveLandscapeAnalysis(companyId: number): Promise<any | null>;
+  saveCompetitiveLandscapeAnalysis(companyId: number, analysis: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -157,6 +161,54 @@ export class DatabaseStorage implements IStorage {
     // For now, return empty array since we don't have a positioning recommendations table
     // This could be extended in the future to store and retrieve actual positioning recommendations
     return [];
+  }
+
+  // Competitive landscape analysis results
+  async getCompetitiveLandscapeAnalysis(companyId: number): Promise<any | null> {
+    // Store landscape analysis as content strategy with a special title
+    const [analysis] = await db
+      .select()
+      .from(contentStrategies)
+      .where(eq(contentStrategies.companyId, companyId))
+      .orderBy(contentStrategies.createdAt)
+      .limit(1);
+    
+    if (!analysis || analysis.title !== '__competitive_landscape_analysis__') {
+      return null;
+    }
+    
+    try {
+      return JSON.parse(analysis.description || '{}');
+    } catch {
+      return null;
+    }
+  }
+
+  async saveCompetitiveLandscapeAnalysis(companyId: number, analysis: any): Promise<any> {
+    // First, delete any existing landscape analysis
+    await db
+      .delete(contentStrategies)
+      .where(
+        and(
+          eq(contentStrategies.companyId, companyId),
+          eq(contentStrategies.title, '__competitive_landscape_analysis__')
+        )
+      );
+    
+    // Insert new analysis
+    const [saved] = await db
+      .insert(contentStrategies)
+      .values({
+        companyId,
+        title: '__competitive_landscape_analysis__',
+        description: JSON.stringify(analysis),
+        targetKeywords: [],
+        contentPillars: [],
+        recommendations: '',
+      })
+      .returning();
+    
+    return analysis;
   }
 }
 
