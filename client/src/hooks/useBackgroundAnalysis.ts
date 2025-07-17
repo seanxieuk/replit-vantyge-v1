@@ -35,11 +35,8 @@ export function useBackgroundAnalysis() {
 
   const competitiveLandscapeMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('/api/competitive-landscape-analysis', {
-        method: 'POST',
-        body: JSON.stringify({})
-      });
-      return response;
+      const response = await apiRequest('POST', '/api/competitive-landscape-analysis', {});
+      return response.json();
     },
     onMutate: () => {
       updateGlobalState({ 
@@ -54,7 +51,7 @@ export function useBackgroundAnalysis() {
         results: data, 
         analysisType: 'competitive' 
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/competitive-landscape-analysis'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/competitive-analyses'] });
     },
     onError: (error: any) => {
       updateGlobalState({ 
@@ -67,10 +64,8 @@ export function useBackgroundAnalysis() {
 
   const positioningMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('/api/positioning-analysis', {
-        method: 'GET'
-      });
-      return response;
+      const response = await apiRequest('POST', '/api/positioning-recommendations', {});
+      return response.json();
     },
     onMutate: () => {
       updateGlobalState({ 
@@ -85,7 +80,7 @@ export function useBackgroundAnalysis() {
         results: data, 
         analysisType: 'positioning' 
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/positioning-analysis'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/positioning-recommendations'] });
     },
     onError: (error: any) => {
       updateGlobalState({ 
