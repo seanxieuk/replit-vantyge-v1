@@ -368,28 +368,30 @@ Generate 5 blog topic ideas that are:
 
 For each idea, provide a rationale explaining why this topic is specifically relevant to this company.
 
-Return your response as a JSON array with this exact structure:
-[
-  {
-    "id": "unique-id-1",
-    "title": "Compelling blog title",
-    "description": "Brief description of what the article will cover",
-    "keywords": ["keyword1", "keyword2", "keyword3", "keyword4"],
-    "estimatedLength": "1200-1500 words",
-    "difficulty": "Easy|Medium|Hard",
-    "targetAudience": "Specific audience description",
-    "contentPillars": ["pillar1", "pillar2", "pillar3"],
-    "seoScore": 85,
-    "rationale": "Explanation of why this topic is perfect for this company"
-  }
-]`;
+Return your response as a JSON object with this exact structure:
+{
+  "blogIdeas": [
+    {
+      "id": "unique-id-1",
+      "title": "Compelling blog title",
+      "description": "Brief description of what the article will cover",
+      "keywords": ["keyword1", "keyword2", "keyword3", "keyword4"],
+      "estimatedLength": "1200-1500 words",
+      "difficulty": "Easy|Medium|Hard",
+      "targetAudience": "Specific audience description",
+      "contentPillars": ["pillar1", "pillar2", "pillar3"],
+      "seoScore": 85,
+      "rationale": "Explanation of why this topic is perfect for this company"
+    }
+  ]
+}`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       messages: [
         {
           role: "system",
-          content: "You are a content marketing expert specializing in creating targeted blog content strategies. Always respond with valid JSON."
+          content: "You are a content marketing expert specializing in creating targeted blog content strategies. Always respond with valid JSON containing a 'blogIdeas' array."
         },
         {
           role: "user",
@@ -401,8 +403,21 @@ Return your response as a JSON array with this exact structure:
       max_tokens: 2000
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '[]');
-    return Array.isArray(result) ? result : result.blogIdeas || [];
+    const content = response.choices[0].message.content || '{}';
+    console.log('OpenAI response content:', content);
+    
+    const result = JSON.parse(content);
+    console.log('Parsed result:', result);
+    
+    // Handle different response formats
+    if (Array.isArray(result)) {
+      return result;
+    } else if (result.blogIdeas && Array.isArray(result.blogIdeas)) {
+      return result.blogIdeas;
+    } else {
+      console.warn('Unexpected response format:', result);
+      return [];
+    }
   } catch (error) {
     console.error("Error generating blog ideas:", error);
     throw new Error("Failed to generate blog ideas");
