@@ -1,55 +1,240 @@
-import { useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import Header from "@/components/layout/header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { RefreshCw, Building, Bot, TrendingUp, AlertTriangle, Target } from "lucide-react";
-import type { CompetitiveAnalysis, Competitor } from "@shared/schema";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { 
+  Search, 
+  Plus, 
+  Globe, 
+  TrendingUp, 
+  TrendingDown, 
+  Target, 
+  Eye,
+  Trash2,
+  BarChart3,
+  Lightbulb,
+  AlertTriangle,
+  CheckCircle
+} from "lucide-react";
+import type { Competitor, InsertCompetitor, CompetitiveAnalysis } from "@shared/schema";
+
+interface Header {
+  title: string;
+  subtitle?: string;
+}
+
+function Header({ title, subtitle }: Header) {
+  return (
+    <div className="bg-white border-b p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+          {subtitle && <p className="text-gray-600 mt-1">{subtitle}</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CompetitorCard({ 
+  competitor, 
+  onDelete, 
+  onAnalyze,
+  analysis,
+  isAnalyzing 
+}: {
+  competitor: Competitor;
+  onDelete: () => void;
+  onAnalyze: () => void;
+  analysis?: CompetitiveAnalysis;
+  isAnalyzing: boolean;
+}) {
+  return (
+    <Card className="relative">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Globe className="h-5 w-5 text-blue-600" />
+              {competitor.name}
+            </CardTitle>
+            {competitor.website && (
+              <p className="text-sm text-gray-500 mt-1">{competitor.website}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onAnalyze}
+              disabled={isAnalyzing}
+            >
+              {isAnalyzing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Search className="h-4 w-4 mr-2" />
+                  Analyze
+                </>
+              )}
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Competitor</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete {competitor.name}? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {competitor.description && (
+          <p className="text-sm text-gray-600 mb-4">{competitor.description}</p>
+        )}
+        
+        {analysis && (
+          <div className="space-y-4">
+            <Separator />
+            
+            {/* SEO Strength */}
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-green-600" />
+              <span className="text-sm font-medium">SEO Strength:</span>
+              <Badge variant={analysis.seoStrength === 'Strong' ? 'default' : 'secondary'}>
+                {analysis.seoStrength || 'Unknown'}
+              </Badge>
+            </div>
+            
+            {/* Market Share */}
+            {analysis.marketShare && (
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium">Market Share:</span>
+                <span className="text-sm">{analysis.marketShare}%</span>
+              </div>
+            )}
+            
+            {/* Content Volume */}
+            {analysis.contentVolume && (
+              <div className="flex items-center gap-2">
+                <Eye className="h-4 w-4 text-purple-600" />
+                <span className="text-sm font-medium">Content Volume:</span>
+                <span className="text-sm">{analysis.contentVolume}</span>
+              </div>
+            )}
+            
+            {/* Insights */}
+            {analysis.insights && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Lightbulb className="h-4 w-4 text-yellow-600" />
+                  <span className="text-sm font-medium">Key Insights:</span>
+                </div>
+                <p className="text-sm text-gray-600 pl-6">{analysis.insights}</p>
+              </div>
+            )}
+            
+            {/* Opportunities */}
+            {analysis.opportunities && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium">Opportunities:</span>
+                </div>
+                <p className="text-sm text-gray-600 pl-6">{analysis.opportunities}</p>
+              </div>
+            )}
+            
+            {/* Threats */}
+            {analysis.threats && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                  <span className="text-sm font-medium">Threats:</span>
+                </div>
+                <p className="text-sm text-gray-600 pl-6">{analysis.threats}</p>
+              </div>
+            )}
+            
+            {/* Recommendations */}
+            {analysis.recommendations && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Target className="h-4 w-4 text-indigo-600" />
+                  <span className="text-sm font-medium">Recommendations:</span>
+                </div>
+                <p className="text-sm text-gray-600 pl-6">{analysis.recommendations}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function CompetitiveAnalysisPage() {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const { isAuthenticated, isLoading } = useAuth();
+  const queryClient = useQueryClient();
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
-
-  const { data: analyses = [], isLoading: analysesLoading } = useQuery({
-    queryKey: ["/api/competitive-analysis"],
-    enabled: isAuthenticated,
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [competitorForm, setCompetitorForm] = useState<Partial<InsertCompetitor>>({
+    name: "",
+    website: "",
+    description: "",
   });
+  const [analyzingCompetitors, setAnalyzingCompetitors] = useState<Set<number>>(new Set());
 
-  const { data: competitors = [] } = useQuery({
+  const { data: competitors, isLoading } = useQuery<Competitor[]>({
     queryKey: ["/api/competitors"],
-    enabled: isAuthenticated,
+    enabled: !!user,
   });
 
-  const runAnalysisMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest("POST", "/api/competitive-analysis/run");
+  const { data: analyses } = useQuery<CompetitiveAnalysis[]>({
+    queryKey: ["/api/competitive-analyses"],
+    enabled: !!user,
+  });
+
+  const addCompetitorMutation = useMutation({
+    mutationFn: async (data: Partial<InsertCompetitor>) => {
+      return await apiRequest("POST", "/api/competitors", data);
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Competitive analysis completed successfully",
+        description: "Competitor added successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/competitive-analysis"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/competitors"] });
+      setCompetitorForm({ name: "", website: "", description: "" });
+      setShowAddForm(false);
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -65,209 +250,186 @@ export default function CompetitiveAnalysisPage() {
       }
       toast({
         title: "Error",
-        description: "Failed to run competitive analysis",
+        description: "Failed to add competitor",
         variant: "destructive",
       });
     },
   });
 
-  const getCompetitorName = (competitorId: number) => {
-    const competitor = competitors.find((c: Competitor) => c.id === competitorId);
-    return competitor?.name || "Unknown Competitor";
+  const deleteCompetitorMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest("DELETE", `/api/competitors/${id}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Competitor removed successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/competitors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/competitive-analyses"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to remove competitor",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const analyzeCompetitorMutation = useMutation({
+    mutationFn: async (competitorId: number) => {
+      return await apiRequest("POST", `/api/competitive-analyses/${competitorId}`, {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Competitive analysis completed",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/competitive-analyses"] });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to analyze competitor",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAddCompetitor = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!competitorForm.name) return;
+    addCompetitorMutation.mutate(competitorForm);
   };
 
-  const getMarketShareColor = (marketShare: number) => {
-    if (marketShare >= 70) return "bg-red-600";
-    if (marketShare >= 40) return "bg-yellow-600";
-    return "bg-green-600";
+  const handleAnalyzeCompetitor = (competitorId: number) => {
+    setAnalyzingCompetitors(prev => new Set(prev).add(competitorId));
+    analyzeCompetitorMutation.mutate(competitorId, {
+      onSettled: () => {
+        setAnalyzingCompetitors(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(competitorId);
+          return newSet;
+        });
+      }
+    });
   };
 
-  const getContentVolumeProgress = (volume: string) => {
-    switch (volume) {
-      case "high": return 75;
-      case "medium": return 50;
-      case "low": return 25;
-      default: return 0;
-    }
+  const getAnalysisForCompetitor = (competitorId: number) => {
+    return analyses?.find(analysis => analysis.competitorId === competitorId);
   };
 
-  const getSeoStrengthProgress = (strength: string) => {
-    switch (strength) {
-      case "strong": return 85;
-      case "moderate": return 50;
-      case "weak": return 20;
-      default: return 0;
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <>
       <Header 
         title="Competitive Analysis" 
-        subtitle="AI-powered competitor intelligence" 
+        subtitle="Track competitors and analyze their strengths, weaknesses, and market positioning" 
       />
 
       <main className="flex-1 overflow-y-auto p-6">
         <div className="space-y-6">
-          {/* Action Bar */}
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm text-gray-600">
-                {competitors.length} competitors tracked • {analyses.length} analyses completed
-              </p>
-            </div>
-            <Button 
-              onClick={() => runAnalysisMutation.mutate()}
-              disabled={runAnalysisMutation.isPending || competitors.length === 0}
-              className="bg-primary hover:bg-primary/90"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${runAnalysisMutation.isPending ? 'animate-spin' : ''}`} />
-              {runAnalysisMutation.isPending ? "Analyzing..." : "Run New Analysis"}
-            </Button>
+          {/* Add Competitor Button */}
+          <div className="flex justify-end">
+            <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Competitor
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Competitor</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleAddCompetitor} className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">Competitor Name</Label>
+                    <Input
+                      id="name"
+                      value={competitorForm.name || ""}
+                      onChange={(e) => setCompetitorForm(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Enter competitor name"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      value={competitorForm.website || ""}
+                      onChange={(e) => setCompetitorForm(prev => ({ ...prev, website: e.target.value }))}
+                      placeholder="https://competitor.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="description">Description/Notes</Label>
+                    <Textarea
+                      id="description"
+                      value={competitorForm.description || ""}
+                      onChange={(e) => setCompetitorForm(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Add notes about this competitor..."
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={addCompetitorMutation.isPending}>
+                      {addCompetitorMutation.isPending ? "Adding..." : "Add Competitor"}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
 
-          {competitors.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Competitors Added</h3>
-                <p className="text-gray-600 mb-4">
-                  Add competitors in the Company section to start running competitive analysis.
-                </p>
-                <Button variant="outline" onClick={() => window.location.href = "/company"}>
-                  Add Competitors
-                </Button>
-              </CardContent>
-            </Card>
+          {/* Competitors Grid */}
+          {competitors && competitors.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {competitors.map((competitor) => (
+                <CompetitorCard
+                  key={competitor.id}
+                  competitor={competitor}
+                  onDelete={() => deleteCompetitorMutation.mutate(competitor.id)}
+                  onAnalyze={() => handleAnalyzeCompetitor(competitor.id)}
+                  analysis={getAnalysisForCompetitor(competitor.id)}
+                  isAnalyzing={analyzingCompetitors.has(competitor.id)}
+                />
+              ))}
+            </div>
           ) : (
-            <>
-              {/* Competitor Overview */}
-              {analyses.length > 0 && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {analyses.map((analysis: CompetitiveAnalysis) => (
-                    <Card key={analysis.id}>
-                      <CardContent className="p-6">
-                        <div className="flex items-center mb-4">
-                          <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mr-4">
-                            <Building className="w-6 h-6 text-gray-600" />
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-900">
-                              {getCompetitorName(analysis.competitorId)}
-                            </h4>
-                            <p className="text-sm text-gray-600">
-                              Last analyzed: {new Date(analysis.analyzedAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-3">
-                          <div>
-                            <div className="flex justify-between text-sm mb-1">
-                              <span className="text-gray-600">Market Share</span>
-                              <span className="font-medium">{analysis.marketShare}%</span>
-                            </div>
-                            <Progress 
-                              value={analysis.marketShare || 0} 
-                              className="h-2"
-                            />
-                          </div>
-                          
-                          <div>
-                            <div className="flex justify-between text-sm mb-1">
-                              <span className="text-gray-600">Content Volume</span>
-                              <span className="font-medium capitalize">{analysis.contentVolume}</span>
-                            </div>
-                            <Progress 
-                              value={getContentVolumeProgress(analysis.contentVolume || "")} 
-                              className="h-2"
-                            />
-                          </div>
-                          
-                          <div>
-                            <div className="flex justify-between text-sm mb-1">
-                              <span className="text-gray-600">SEO Strength</span>
-                              <span className="font-medium capitalize">{analysis.seoStrength}</span>
-                            </div>
-                            <Progress 
-                              value={getSeoStrengthProgress(analysis.seoStrength || "")} 
-                              className="h-2"
-                            />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-
-              {/* AI Insights */}
-              {analyses.length > 0 && (
-                <Card className="bg-blue-50 border-blue-200">
-                  <CardContent className="p-6">
-                    <div className="flex items-center mb-4">
-                      <Bot className="w-6 h-6 text-primary mr-3" />
-                      <h4 className="font-semibold text-gray-900">AI-Generated Insights</h4>
-                    </div>
-                    <div className="space-y-4">
-                      {analyses.slice(0, 3).map((analysis: CompetitiveAnalysis) => (
-                        <div key={analysis.id} className="space-y-3 text-gray-700">
-                          <h5 className="font-medium">{getCompetitorName(analysis.competitorId)}</h5>
-                          
-                          {analysis.opportunities && (
-                            <div className="flex items-start space-x-2">
-                              <Target className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                              <div>
-                                <strong className="text-green-700">Opportunity:</strong> {analysis.opportunities}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {analysis.threats && (
-                            <div className="flex items-start space-x-2">
-                              <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
-                              <div>
-                                <strong className="text-red-700">Threat:</strong> {analysis.threats}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {analysis.recommendations && (
-                            <div className="flex items-start space-x-2">
-                              <TrendingUp className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                              <div>
-                                <strong className="text-blue-700">Recommendation:</strong> {analysis.recommendations}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* No Analysis Available */}
-              {analyses.length === 0 && (
-                <Card>
-                  <CardContent className="p-12 text-center">
-                    <Bot className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Analysis Available</h3>
-                    <p className="text-gray-600 mb-4">
-                      Run your first competitive analysis to get AI-powered insights about your competitors.
-                    </p>
-                    <Button 
-                      onClick={() => runAnalysisMutation.mutate()}
-                      disabled={runAnalysisMutation.isPending}
-                      className="bg-primary hover:bg-primary/90"
-                    >
-                      <RefreshCw className={`w-4 h-4 mr-2 ${runAnalysisMutation.isPending ? 'animate-spin' : ''}`} />
-                      {runAnalysisMutation.isPending ? "Analyzing..." : "Run Analysis"}
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </>
+            <Card className="text-center p-12">
+              <div className="flex flex-col items-center space-y-4">
+                <Search className="h-12 w-12 text-gray-400" />
+                <h3 className="text-lg font-medium text-gray-900">No competitors added yet</h3>
+                <p className="text-gray-600">Start by adding your first competitor to begin competitive analysis</p>
+                <Button onClick={() => setShowAddForm(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Competitor
+                </Button>
+              </div>
+            </Card>
           )}
         </div>
       </main>

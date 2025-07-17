@@ -8,6 +8,8 @@ import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Company from "@/pages/company";
 import CompetitiveAnalysis from "@/pages/competitive-analysis";
+import PositioningWorkshops from "@/pages/positioning-workshops";
+import BlogCreation from "@/pages/blog-creation";
 import ContentCreation from "@/pages/content-creation";
 import ContentCalendar from "@/pages/content-calendar";
 import Settings from "@/pages/settings";
@@ -37,6 +39,8 @@ function Router() {
           <Route path="/" component={Dashboard} />
           <Route path="/company" component={Company} />
           <Route path="/competitive-analysis" component={CompetitiveAnalysis} />
+          <Route path="/positioning-workshops" component={PositioningWorkshops} />
+          <Route path="/blog-creation" component={BlogCreation} />
           <Route path="/content-creation" component={ContentCreation} />
           <Route path="/content-calendar" component={ContentCalendar} />
           <Route path="/settings" component={Settings} />

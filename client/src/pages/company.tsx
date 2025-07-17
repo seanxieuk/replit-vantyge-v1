@@ -1,72 +1,148 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import Header from "@/components/layout/header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, X, Globe, Building } from "lucide-react";
-import type { Company, Competitor, InsertCompany, InsertCompetitor } from "@shared/schema";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Building2, Globe, Linkedin, Plus, X, Target, Users, AlertCircle } from "lucide-react";
+import type { Company, InsertCompany } from "@shared/schema";
+
+interface Header {
+  title: string;
+  subtitle?: string;
+}
+
+function Header({ title, subtitle }: Header) {
+  return (
+    <div className="bg-white border-b p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+          {subtitle && <p className="text-gray-600 mt-1">{subtitle}</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MultiInputField({ 
+  label, 
+  values, 
+  onChange, 
+  placeholder, 
+  icon: Icon 
+}: {
+  label: string;
+  values: string[];
+  onChange: (values: string[]) => void;
+  placeholder: string;
+  icon: React.ComponentType<any>;
+}) {
+  const [inputValue, setInputValue] = useState("");
+
+  const addValue = () => {
+    if (inputValue.trim() && !values.includes(inputValue.trim())) {
+      onChange([...values, inputValue.trim()]);
+      setInputValue("");
+    }
+  };
+
+  const removeValue = (index: number) => {
+    onChange(values.filter((_, i) => i !== index));
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label className="flex items-center gap-2">
+        <Icon className="h-4 w-4" />
+        {label}
+      </Label>
+      <div className="flex gap-2">
+        <Input
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          placeholder={placeholder}
+          onKeyPress={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addValue();
+            }
+          }}
+        />
+        <Button type="button" onClick={addValue} size="sm">
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {values.map((value, index) => (
+          <Badge key={index} variant="secondary" className="flex items-center gap-1">
+            {value}
+            <X
+              className="h-3 w-3 cursor-pointer hover:text-red-500"
+              onClick={() => removeValue(index)}
+            />
+          </Badge>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function CompanyPage() {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const { isAuthenticated, isLoading } = useAuth();
-  const [companyForm, setCompanyForm] = useState<Partial<InsertCompany>>({});
-  const [competitorForm, setCompetitorForm] = useState<Partial<InsertCompetitor>>({
+  const queryClient = useQueryClient();
+
+  const [companyForm, setCompanyForm] = useState<Partial<InsertCompany>>({
     name: "",
-    website: "",
+    domain: "",
+    linkedinUrl: "",
+    industry: "",
+    size: "",
     description: "",
+    uniqueSellingProposition: "",
+    products: [],
+    services: [],
+    idealCustomerProfiles: [],
+    customerPainPoints: [],
+    targetAudience: "",
   });
-  const [showCompetitorForm, setShowCompetitorForm] = useState(false);
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
-
-  const { data: company, isLoading: companyLoading } = useQuery({
+  const { data: company, isLoading } = useQuery<Company>({
     queryKey: ["/api/company"],
-    enabled: isAuthenticated,
+    enabled: !!user,
   });
 
-  const { data: competitors = [], isLoading: competitorsLoading } = useQuery({
-    queryKey: ["/api/competitors"],
-    enabled: isAuthenticated,
-  });
-
-  // Initialize form with existing company data
-  useEffect(() => {
-    if (company) {
+  React.useEffect(() => {
+    if (company && !isLoading) {
       setCompanyForm({
         name: company.name || "",
+        domain: company.domain || "",
+        linkedinUrl: company.linkedinUrl || "",
         industry: company.industry || "",
         size: company.size || "",
-        website: company.website || "",
         description: company.description || "",
+        uniqueSellingProposition: company.uniqueSellingProposition || "",
+        products: company.products || [],
+        services: company.services || [],
+        idealCustomerProfiles: company.idealCustomerProfiles || [],
+        customerPainPoints: company.customerPainPoints || [],
         targetAudience: company.targetAudience || "",
       });
     }
-  }, [company]);
+  }, [company, isLoading]);
 
   const saveCompanyMutation = useMutation({
     mutationFn: async (data: Partial<InsertCompany>) => {
-      return await apiRequest("POST", "/api/company", data);
+      const method = company ? "PUT" : "POST";
+      return await apiRequest(method, "/api/company", data);
     },
     onSuccess: () => {
       toast({
@@ -95,303 +171,218 @@ export default function CompanyPage() {
     },
   });
 
-  const addCompetitorMutation = useMutation({
-    mutationFn: async (data: Partial<InsertCompetitor>) => {
-      return await apiRequest("POST", "/api/competitors", data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Competitor added successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/competitors"] });
-      setCompetitorForm({ name: "", website: "", description: "" });
-      setShowCompetitorForm(false);
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to add competitor",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteCompetitorMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return await apiRequest("DELETE", `/api/competitors/${id}`);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Competitor removed successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/competitors"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to remove competitor",
-        variant: "destructive",
-      });
-    },
-  });
+  const handleDomainChange = (domain: string) => {
+    setCompanyForm(prev => ({ 
+      ...prev, 
+      domain,
+      // Auto-generate company name from domain
+      name: domain ? domain.replace(/^https?:\/\//, '').replace(/^www\./, '').split('.')[0] : prev.name
+    }));
+  };
 
   const handleSaveCompany = (e: React.FormEvent) => {
     e.preventDefault();
     saveCompanyMutation.mutate(companyForm);
   };
 
-  const handleAddCompetitor = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!competitorForm.name) return;
-    addCompetitorMutation.mutate(competitorForm);
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <>
       <Header 
         title="My Company" 
-        subtitle="Manage your company information and competitors" 
+        subtitle="Manage your company information to power AI insights across all marketing functions" 
       />
 
       <main className="flex-1 overflow-y-auto p-6">
-        <div className="space-y-6">
-          {/* Company Information */}
+        <form onSubmit={handleSaveCompany} className="space-y-6">
+          {/* Basic Information */}
           <Card>
             <CardHeader>
-              <CardTitle>Company Information</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Basic Information
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSaveCompany} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="name">Company Name</Label>
-                    <Input
-                      id="name"
-                      value={companyForm.name || ""}
-                      onChange={(e) => setCompanyForm(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Enter company name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="industry">Industry</Label>
-                    <Select 
-                      value={companyForm.industry || ""} 
-                      onValueChange={(value) => setCompanyForm(prev => ({ ...prev, industry: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select industry" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Technology">Technology</SelectItem>
-                        <SelectItem value="Healthcare">Healthcare</SelectItem>
-                        <SelectItem value="Finance">Finance</SelectItem>
-                        <SelectItem value="Retail">Retail</SelectItem>
-                        <SelectItem value="Manufacturing">Manufacturing</SelectItem>
-                        <SelectItem value="Education">Education</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="size">Company Size</Label>
-                    <Select 
-                      value={companyForm.size || ""} 
-                      onValueChange={(value) => setCompanyForm(prev => ({ ...prev, size: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select company size" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1-10 employees">1-10 employees</SelectItem>
-                        <SelectItem value="11-50 employees">11-50 employees</SelectItem>
-                        <SelectItem value="51-200 employees">51-200 employees</SelectItem>
-                        <SelectItem value="201-1000 employees">201-1000 employees</SelectItem>
-                        <SelectItem value="1000+ employees">1000+ employees</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="website">Website</Label>
-                    <Input
-                      id="website"
-                      type="url"
-                      value={companyForm.website || ""}
-                      onChange={(e) => setCompanyForm(prev => ({ ...prev, website: e.target.value }))}
-                      placeholder="https://example.com"
-                    />
-                  </div>
-                </div>
-
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="description">Company Description</Label>
-                  <Textarea
-                    id="description"
-                    rows={4}
-                    value={companyForm.description || ""}
-                    onChange={(e) => setCompanyForm(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Describe your company, products, and services..."
+                  <Label htmlFor="domain" className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    Website Domain
+                  </Label>
+                  <Input
+                    id="domain"
+                    value={companyForm.domain || ""}
+                    onChange={(e) => handleDomainChange(e.target.value)}
+                    placeholder="https://yourcompany.com"
                   />
                 </div>
-
                 <div>
-                  <Label htmlFor="targetAudience">Target Audience</Label>
-                  <Textarea
-                    id="targetAudience"
-                    rows={3}
-                    value={companyForm.targetAudience || ""}
-                    onChange={(e) => setCompanyForm(prev => ({ ...prev, targetAudience: e.target.value }))}
-                    placeholder="Describe your ideal customers..."
+                  <Label htmlFor="name">Company Name</Label>
+                  <Input
+                    id="name"
+                    value={companyForm.name || ""}
+                    onChange={(e) => setCompanyForm(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Auto-generated from domain"
                   />
                 </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="linkedinUrl" className="flex items-center gap-2">
+                  <Linkedin className="h-4 w-4" />
+                  LinkedIn URL
+                </Label>
+                <Input
+                  id="linkedinUrl"
+                  value={companyForm.linkedinUrl || ""}
+                  onChange={(e) => setCompanyForm(prev => ({ ...prev, linkedinUrl: e.target.value }))}
+                  placeholder="https://linkedin.com/company/yourcompany"
+                />
+              </div>
 
-                <div className="flex justify-end space-x-3">
-                  <Button 
-                    type="submit" 
-                    disabled={saveCompanyMutation.isPending}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    {saveCompanyMutation.isPending ? "Saving..." : "Save Changes"}
-                  </Button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="industry">Industry</Label>
+                  <Input
+                    id="industry"
+                    value={companyForm.industry || ""}
+                    onChange={(e) => setCompanyForm(prev => ({ ...prev, industry: e.target.value }))}
+                    placeholder="Technology, Healthcare, Finance, etc."
+                  />
                 </div>
-              </form>
+                <div>
+                  <Label htmlFor="size">Company Size</Label>
+                  <Input
+                    id="size"
+                    value={companyForm.size || ""}
+                    onChange={(e) => setCompanyForm(prev => ({ ...prev, size: e.target.value }))}
+                    placeholder="1-10, 11-50, 51-200, etc."
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="description">Company Description</Label>
+                <Textarea
+                  id="description"
+                  value={companyForm.description || ""}
+                  onChange={(e) => setCompanyForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Describe what your company does..."
+                  rows={3}
+                />
+              </div>
             </CardContent>
           </Card>
 
-          {/* Competitors Section */}
+          {/* Value Proposition */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Competitors</CardTitle>
-              <Button 
-                onClick={() => setShowCompetitorForm(true)}
-                className="bg-primary hover:bg-primary/90"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Competitor
-              </Button>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Value Proposition
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {showCompetitorForm && (
-                <Card className="mb-6 border-2 border-dashed border-gray-200">
-                  <CardContent className="pt-6">
-                    <form onSubmit={handleAddCompetitor} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="competitorName">Competitor Name</Label>
-                          <Input
-                            id="competitorName"
-                            value={competitorForm.name || ""}
-                            onChange={(e) => setCompetitorForm(prev => ({ ...prev, name: e.target.value }))}
-                            placeholder="Enter competitor name"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="competitorWebsite">Website</Label>
-                          <Input
-                            id="competitorWebsite"
-                            type="url"
-                            value={competitorForm.website || ""}
-                            onChange={(e) => setCompetitorForm(prev => ({ ...prev, website: e.target.value }))}
-                            placeholder="https://competitor.com"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="competitorDescription">Description</Label>
-                        <Textarea
-                          id="competitorDescription"
-                          rows={2}
-                          value={competitorForm.description || ""}
-                          onChange={(e) => setCompetitorForm(prev => ({ ...prev, description: e.target.value }))}
-                          placeholder="Brief description of the competitor..."
-                        />
-                      </div>
-                      <div className="flex justify-end space-x-2">
-                        <Button 
-                          type="button" 
-                          variant="outline"
-                          onClick={() => {
-                            setShowCompetitorForm(false);
-                            setCompetitorForm({ name: "", website: "", description: "" });
-                          }}
-                        >
-                          Cancel
-                        </Button>
-                        <Button 
-                          type="submit" 
-                          disabled={addCompetitorMutation.isPending}
-                          className="bg-primary hover:bg-primary/90"
-                        >
-                          {addCompetitorMutation.isPending ? "Adding..." : "Add Competitor"}
-                        </Button>
-                      </div>
-                    </form>
-                  </CardContent>
-                </Card>
-              )}
-
-              {competitorsLoading ? (
-                <div className="text-center py-8 text-gray-500">Loading competitors...</div>
-              ) : competitors.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  No competitors added yet. Click "Add Competitor" to get started.
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {competitors.map((competitor: Competitor) => (
-                    <Card key={competitor.id} className="border border-gray-200">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="font-medium text-gray-900">{competitor.name}</h4>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => deleteCompetitorMutation.mutate(competitor.id)}
-                            className="text-gray-400 hover:text-red-500 h-6 w-6 p-0"
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        {competitor.description && (
-                          <p className="text-sm text-gray-600 mb-3">{competitor.description}</p>
-                        )}
-                        {competitor.website && (
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Globe className="w-4 h-4 mr-2" />
-                            <a 
-                              href={competitor.website} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="hover:text-primary"
-                            >
-                              {competitor.website.replace(/^https?:\/\//, "")}
-                            </a>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
+              <div>
+                <Label htmlFor="usp">Unique Selling Proposition</Label>
+                <Textarea
+                  id="usp"
+                  value={companyForm.uniqueSellingProposition || ""}
+                  onChange={(e) => setCompanyForm(prev => ({ ...prev, uniqueSellingProposition: e.target.value }))}
+                  placeholder="What makes your company unique and different from competitors?"
+                  rows={3}
+                />
+              </div>
             </CardContent>
           </Card>
-        </div>
+
+          {/* Products & Services */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Products & Services</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <MultiInputField
+                label="Products"
+                values={companyForm.products || []}
+                onChange={(values) => setCompanyForm(prev => ({ ...prev, products: values }))}
+                placeholder="Add a product"
+                icon={Plus}
+              />
+              
+              <Separator />
+              
+              <MultiInputField
+                label="Services"
+                values={companyForm.services || []}
+                onChange={(values) => setCompanyForm(prev => ({ ...prev, services: values }))}
+                placeholder="Add a service"
+                icon={Plus}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Customer Intelligence */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Customer Intelligence
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <MultiInputField
+                label="Ideal Customer Profiles (ICPs)"
+                values={companyForm.idealCustomerProfiles || []}
+                onChange={(values) => setCompanyForm(prev => ({ ...prev, idealCustomerProfiles: values }))}
+                placeholder="Add an ideal customer profile"
+                icon={Users}
+              />
+              
+              <Separator />
+              
+              <MultiInputField
+                label="Customer Pain Points"
+                values={companyForm.customerPainPoints || []}
+                onChange={(values) => setCompanyForm(prev => ({ ...prev, customerPainPoints: values }))}
+                placeholder="Add a customer pain point"
+                icon={AlertCircle}
+              />
+              
+              <Separator />
+              
+              <div>
+                <Label htmlFor="targetAudience">Target Audience</Label>
+                <Textarea
+                  id="targetAudience"
+                  value={companyForm.targetAudience || ""}
+                  onChange={(e) => setCompanyForm(prev => ({ ...prev, targetAudience: e.target.value }))}
+                  placeholder="Describe your target audience in detail..."
+                  rows={3}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Save Button */}
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              disabled={saveCompanyMutation.isPending}
+              className="min-w-[120px]"
+            >
+              {saveCompanyMutation.isPending ? "Saving..." : "Save Company"}
+            </Button>
+          </div>
+        </form>
       </main>
     </>
   );
