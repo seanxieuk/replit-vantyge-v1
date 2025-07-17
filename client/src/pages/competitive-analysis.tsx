@@ -518,72 +518,76 @@ export default function CompetitiveAnalysisPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="mb-4">
-                      <h4 className="font-medium text-gray-900 mb-2">Market Position</h4>
-                      <p className="text-gray-700">{landscapeAnalysis.competitivePosition.marketPosition}</p>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          Strengths
-                        </h4>
-                        <ul className="space-y-1">
-                          {landscapeAnalysis.competitivePosition.strengths.map((strength: string, index: number) => (
-                            <li key={index} className="flex items-start gap-2 text-sm">
-                              <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
-                              {strength}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      
-                      <div>
-                        <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4 text-red-600" />
-                          Weaknesses
-                        </h4>
-                        <ul className="space-y-1">
-                          {landscapeAnalysis.competitivePosition.weaknesses.map((weakness: string, index: number) => (
-                            <li key={index} className="flex items-start gap-2 text-sm">
-                              <AlertTriangle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
-                              {weakness}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      
-                      <div>
-                        <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4 text-blue-600" />
-                          Opportunities
-                        </h4>
-                        <ul className="space-y-1">
-                          {landscapeAnalysis.competitivePosition.opportunities.map((opportunity: string, index: number) => (
-                            <li key={index} className="flex items-start gap-2 text-sm">
-                              <TrendingUp className="h-3 w-3 text-blue-500 mt-0.5 flex-shrink-0" />
-                              {opportunity}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      
-                      <div>
-                        <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
-                          <Shield className="h-4 w-4 text-orange-600" />
-                          Threats
-                        </h4>
-                        <ul className="space-y-1">
-                          {landscapeAnalysis.competitivePosition.threats.map((threat: string, index: number) => (
-                            <li key={index} className="flex items-start gap-2 text-sm">
-                              <Shield className="h-3 w-3 text-orange-500 mt-0.5 flex-shrink-0" />
-                              {threat}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
+                    {landscapeAnalysis.competitivePosition && (
+                      <>
+                        <div className="mb-4">
+                          <h4 className="font-medium text-gray-900 mb-2">Market Position</h4>
+                          <p className="text-gray-700">{landscapeAnalysis.competitivePosition.marketPosition}</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                              Strengths
+                            </h4>
+                            <ul className="space-y-1">
+                              {landscapeAnalysis.competitivePosition.strengths?.map((strength: string, index: number) => (
+                                <li key={index} className="flex items-start gap-2 text-sm">
+                                  <CheckCircle className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
+                                  {strength}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                              <AlertTriangle className="h-4 w-4 text-red-600" />
+                              Weaknesses
+                            </h4>
+                            <ul className="space-y-1">
+                              {landscapeAnalysis.competitivePosition.weaknesses?.map((weakness: string, index: number) => (
+                                <li key={index} className="flex items-start gap-2 text-sm">
+                                  <AlertTriangle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
+                                  {weakness}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                              <TrendingUp className="h-4 w-4 text-blue-600" />
+                              Opportunities
+                            </h4>
+                            <ul className="space-y-1">
+                              {landscapeAnalysis.competitivePosition.opportunities?.map((opportunity: string, index: number) => (
+                                <li key={index} className="flex items-start gap-2 text-sm">
+                                  <TrendingUp className="h-3 w-3 text-blue-500 mt-0.5 flex-shrink-0" />
+                                  {opportunity}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          
+                          <div>
+                            <h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                              <Shield className="h-4 w-4 text-orange-600" />
+                              Threats
+                            </h4>
+                            <ul className="space-y-1">
+                              {landscapeAnalysis.competitivePosition.threats?.map((threat: string, index: number) => (
+                                <li key={index} className="flex items-start gap-2 text-sm">
+                                  <Shield className="h-3 w-3 text-orange-500 mt-0.5 flex-shrink-0" />
+                                  {threat}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -597,7 +601,7 @@ export default function CompetitiveAnalysisPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {landscapeAnalysis.competitorInsights.map((insight: any) => (
+                      {landscapeAnalysis.competitorInsights?.map((insight: any) => (
                         <div key={insight.id} className="border rounded-lg p-4">
                           <div className="flex items-start justify-between mb-2">
                             <h4 className="font-medium text-gray-900">{insight.name}</h4>
@@ -623,7 +627,7 @@ export default function CompetitiveAnalysisPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {landscapeAnalysis.recommendations.map((rec: any) => (
+                      {landscapeAnalysis.recommendations?.map((rec: any) => (
                         <div key={rec.id} className="border rounded-lg p-4">
                           <div className="flex items-start justify-between mb-2">
                             <h4 className="font-medium text-gray-900">{rec.title}</h4>
