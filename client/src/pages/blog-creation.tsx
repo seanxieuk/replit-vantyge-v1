@@ -66,11 +66,11 @@ interface GeneratedArticle {
 function BlogIdeaCard({ 
   idea, 
   onGenerate, 
-  isGenerating 
+  generatingArticleId 
 }: {
   idea: BlogIdea;
   onGenerate: (idea: BlogIdea) => void;
-  isGenerating: boolean;
+  generatingArticleId: string | null;
 }) {
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty.toLowerCase()) {
@@ -158,10 +158,10 @@ function BlogIdeaCard({
         <div className="pt-4 border-t">
           <Button
             onClick={() => onGenerate(idea)}
-            disabled={isGenerating}
+            disabled={generatingArticleId === idea.id}
             className="w-full"
           >
-            {isGenerating ? (
+            {generatingArticleId === idea.id ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Generating Article...
@@ -282,7 +282,7 @@ export default function BlogCreationPage() {
   const queryClient = useQueryClient();
   const [selectedArticle, setSelectedArticle] = useState<GeneratedArticle | null>(null);
   const [showArticleModal, setShowArticleModal] = useState(false);
-  const [generatingArticle, setGeneratingArticle] = useState(false);
+  const [generatingArticleId, setGeneratingArticleId] = useState<string | null>(null);
 
   const { data: company } = useQuery({
     queryKey: ["/api/company"],
@@ -346,10 +346,10 @@ export default function BlogCreationPage() {
     onSuccess: (data) => {
       setSelectedArticle(data);
       setShowArticleModal(true);
-      setGeneratingArticle(false);
+      setGeneratingArticleId(null);
     },
     onError: (error) => {
-      setGeneratingArticle(false);
+      setGeneratingArticleId(null);
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
@@ -374,7 +374,7 @@ export default function BlogCreationPage() {
   };
 
   const handleGenerateArticle = (idea: BlogIdea) => {
-    setGeneratingArticle(true);
+    setGeneratingArticleId(idea.id);
     generateArticleMutation.mutate(idea);
   };
 
@@ -522,7 +522,7 @@ export default function BlogCreationPage() {
                     key={idea.id}
                     idea={idea}
                     onGenerate={handleGenerateArticle}
-                    isGenerating={generatingArticle}
+                    generatingArticleId={generatingArticleId}
                   />
                 ))}
               </div>
