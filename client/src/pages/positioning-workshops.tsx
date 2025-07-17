@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -342,6 +342,53 @@ export default function PositioningWorkshopsPage() {
               </CardContent>
             </Card>
 
+            {/* AI Analysis Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="h-5 w-5" />
+                  AI Positioning Analysis
+                </CardTitle>
+                <CardDescription>
+                  Generate comprehensive positioning insights based on your company and competitive data
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {hasPrerequisites ? (
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={handleGenerateRecommendations}
+                      disabled={isGenerating}
+                      size="lg"
+                      className="px-8"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Brain className="h-4 w-4 mr-2" />
+                          Analyze
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-gray-600 mb-4">
+                      Complete prerequisites above to unlock AI positioning analysis
+                    </p>
+                    <Button disabled variant="outline">
+                      <Brain className="h-4 w-4 mr-2" />
+                      Analyze
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Current Positioning Analysis */}
             {analysis?.currentPositioning && (
               <Card>
@@ -399,29 +446,11 @@ export default function PositioningWorkshopsPage() {
           </TabsContent>
 
           <TabsContent value="recommendations" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold">AI-Generated Positioning Recommendations</h2>
-                <p className="text-gray-600 mt-1">
-                  Personalized recommendations based on your company and competitive analysis
-                </p>
-              </div>
-              <Button
-                onClick={handleGenerateRecommendations}
-                disabled={!hasPrerequisites || isGenerating}
-              >
-                {isGenerating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Brain className="h-4 w-4 mr-2" />
-                    Generate Recommendations
-                  </>
-                )}
-              </Button>
+            <div>
+              <h2 className="text-xl font-semibold">AI-Generated Positioning Recommendations</h2>
+              <p className="text-gray-600 mt-1">
+                Personalized recommendations based on your company and competitive analysis
+              </p>
             </div>
 
             {!hasPrerequisites && (
@@ -462,7 +491,7 @@ export default function PositioningWorkshopsPage() {
                   </p>
                   <Button onClick={handleGenerateRecommendations} disabled={isGenerating}>
                     <Brain className="h-4 w-4 mr-2" />
-                    Generate Recommendations
+                    {isGenerating ? 'Analyzing...' : 'Analyze'}
                   </Button>
                 </CardContent>
               </Card>
