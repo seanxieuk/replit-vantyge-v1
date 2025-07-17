@@ -32,6 +32,7 @@ import {
   Loader2
 } from "lucide-react";
 import type { Competitor, InsertCompetitor, CompetitiveAnalysis } from "@shared/schema";
+import { useBackgroundAnalysis } from "@/hooks/useBackgroundAnalysis";
 
 interface Header {
   title: string;
@@ -203,6 +204,7 @@ export default function CompetitiveAnalysisPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isAnalyzing, results: landscapeAnalysis, analysisType, startCompetitiveAnalysis } = useBackgroundAnalysis();
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [competitorForm, setCompetitorForm] = useState<Partial<InsertCompetitor>>({
@@ -210,8 +212,6 @@ export default function CompetitiveAnalysisPage() {
     website: "",
     description: "",
   });
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [landscapeAnalysis, setLandscapeAnalysis] = useState<any>(null);
 
 
   const { data: competitors, isLoading } = useQuery<Competitor[]>({
@@ -330,37 +330,6 @@ export default function CompetitiveAnalysisPage() {
     },
   });
 
-  const analyzeLandscapeMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest("POST", "/api/competitive-landscape-analysis", {});
-    },
-    onSuccess: (data) => {
-      setLandscapeAnalysis(data);
-      toast({
-        title: "Success",
-        description: "Competitive landscape analysis completed",
-      });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: "Failed to analyze competitive landscape",
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleAnalyzeAll = () => {
     if (!competitors?.length) return;
     analyzeAllMutation.mutate();
@@ -368,10 +337,7 @@ export default function CompetitiveAnalysisPage() {
 
   const handleAnalyzeLandscape = () => {
     if (!competitors?.length) return;
-    setIsAnalyzing(true);
-    analyzeLandscapeMutation.mutate(undefined, {
-      onSettled: () => setIsAnalyzing(false)
-    });
+    startCompetitiveAnalysis();
   };
 
   const getAnalysisForCompetitor = (competitorId: number) => {
@@ -491,7 +457,7 @@ export default function CompetitiveAnalysisPage() {
           )}
 
           {/* Competitive Landscape Analysis Results */}
-          {landscapeAnalysis && (
+          {landscapeAnalysis && analysisType === 'competitive' && (
             <div className="space-y-6">
               <div className="border-t pt-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Competitive Landscape Analysis</h2>
@@ -505,7 +471,7 @@ export default function CompetitiveAnalysisPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-700">{landscapeAnalysis.summary}</p>
+                    <p className="text-gray-700">{landscapeAnalysis.summary || 'Analysis summary not available'}</p>
                   </CardContent>
                 </Card>
 
