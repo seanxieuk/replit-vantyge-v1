@@ -316,9 +316,13 @@ export default function CompetitiveAnalysisPage() {
         }, 500);
         return;
       }
+      
+      // Extract error message from the error object
+      const errorMessage = error.message || "Failed to analyze competitors";
+      
       toast({
         title: "Analysis Error",
-        description: "Failed to analyze competitors",
+        description: errorMessage,
         variant: "destructive",
       });
     },

@@ -164,8 +164,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get real SEO data from Moz API
       const mozData = await mozApi.analyzeCompetitor(competitor.website || '');
       
-      // Generate AI insights using OpenAI
-      const aiInsights = await analyzeCompetitor(competitor.name, competitor.website || '', mozData);
+      // Generate AI insights using OpenAI with company context
+      const aiInsights = await analyzeCompetitor(competitor.name, competitor.website || '', mozData, company);
       
       const analysis = await storage.createCompetitiveAnalysis({
         companyId: company.id,
@@ -195,10 +195,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const company = await storage.getCompanyByUserId(userId);
       
       if (!company) {
-        return res.status(404).json({ message: "Company not found" });
+        return res.status(400).json({ message: "Company profile not found. Please complete your company setup first." });
       }
 
       const competitors = await storage.getCompetitorsByCompanyId(company.id);
+      
+      if (!competitors || competitors.length === 0) {
+        return res.status(400).json({ message: "No competitors found. Please add competitors first." });
+      }
+
       const analyses = [];
       
       for (const competitor of competitors) {
@@ -212,8 +217,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Get real SEO data from Moz API
           const mozData = await mozApi.analyzeCompetitor(competitor.website || '');
           
-          // Generate AI insights using OpenAI
-          const aiInsights = await analyzeCompetitor(competitor.name, competitor.website || '', mozData);
+          // Generate AI insights using OpenAI with company context
+          const aiInsights = await analyzeCompetitor(competitor.name, competitor.website || '', mozData, company);
           
           const analysis = await storage.createCompetitiveAnalysis({
             companyId: company.id,

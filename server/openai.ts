@@ -42,7 +42,8 @@ export async function analyzeCompetitor(
     linkingDomains: number;
     totalLinks: number;
     seoStrength: string;
-  }
+  },
+  company?: any
 ): Promise<{
   insights: string;
   threats: string;
@@ -74,7 +75,18 @@ export async function analyzeCompetitor(
           - Total Links: ${mozData.totalLinks}
           - SEO Strength: ${mozData.seoStrength}
           
-          Based on these authentic SEO metrics, provide strategic marketing insights and actionable recommendations.`
+          ${company ? `
+          Company Context:
+          - Company: ${company.name}
+          - Industry: ${company.industry || 'Not specified'}
+          - Products/Services: ${company.products?.join(', ') || 'Not specified'}
+          - Target Audience: ${company.idealCustomerProfiles || 'Not specified'}
+          - Unique Selling Proposition: ${company.uniqueSellingProposition || 'Not specified'}
+          - Website: ${company.website || 'Not specified'}
+          
+          Compare this competitor's SEO performance against our company and provide strategic insights.` : ''}
+          
+          Based on these authentic SEO metrics${company ? ' and company context' : ''}, provide strategic marketing insights and actionable recommendations.`
         }
       ],
       response_format: { type: "json_object" },

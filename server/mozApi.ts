@@ -40,27 +40,21 @@ export class MozApiService {
 
   async getUrlMetrics(urls: string[]): Promise<MozMetrics[]> {
     try {
-      const expires = Math.floor(Date.now() / 1000) + 300;
-      const stringToSign = `${this.accessId}\n${expires}`;
-      const signature = crypto
-        .createHmac('sha1', this.secretKey)
-        .update(stringToSign)
-        .digest('base64');
-
+      // Use Basic authentication with access_id:secret_key
       const response = await fetch(this.baseUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Basic ${Buffer.from(`${this.accessId}:${signature}`).toString('base64')}`,
+          'Authorization': `Basic ${Buffer.from(`${this.accessId}:${this.secretKey}`).toString('base64')}`,
         },
         body: JSON.stringify({
-          targets: urls.map(url => ({ target: url })),
-          expires: expires
+          targets: urls
         })
       });
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error(`Moz API error: ${response.status} - ${errorText}`);
         throw new Error(`Moz API error: ${response.status} - ${errorText}`);
       }
 
