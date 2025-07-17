@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain } from "lucide-react";
+import logoPath from "@assets/2_color_light.svg";
 
 export default function Landing() {
   const handleLogin = () => {
@@ -12,9 +12,7 @@ export default function Landing() {
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center pb-2">
           <div className="flex items-center justify-center space-x-3 mb-6">
-            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Brain className="w-7 h-7 text-white" />
-            </div>
+            <img src={logoPath} alt="Vantyge Logo" className="w-12 h-12" />
             <span className="text-2xl font-bold text-gray-900">MarketingAI</span>
           </div>
           <CardTitle className="text-xl text-gray-900">Welcome Back</CardTitle>
