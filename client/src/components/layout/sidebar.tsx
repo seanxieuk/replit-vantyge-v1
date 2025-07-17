@@ -23,9 +23,7 @@ const navigation = [
   { name: "Competitive Analysis", href: "/competitive-analysis", icon: Search, group: "AI Tools" },
   { name: "Positioning Workshops", href: "/positioning-workshops", icon: Target, group: "AI Tools" },
   { name: "Blog Creation", href: "/blog-creation", icon: PenTool, group: "AI Tools" },
-
   { name: "Content Calendar", href: "/content-calendar", icon: Calendar, group: "AI Tools" },
-  { name: "Settings", href: "/settings", icon: Settings, group: "Account" },
 ];
 
 export default function Sidebar() {
@@ -91,30 +89,33 @@ export default function Sidebar() {
 
       {/* User Profile */}
       <div className="p-4 border-t border-sidebar-border bg-sidebar-background" style={{ backgroundColor: 'hsl(220, 26%, 14%)' }}>
-        <div className="flex items-center space-x-3 mb-3">
-          <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
-            {user?.profileImageUrl ? (
-              <img 
-                src={user.profileImageUrl} 
-                alt="Profile" 
-                className="w-8 h-8 rounded-full object-cover"
-              />
-            ) : (
-              <span className="text-sm font-medium text-sidebar-foreground">
-                {user?.firstName?.[0] || user?.email?.[0] || "U"}
-              </span>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate">
-              {user?.firstName && user?.lastName 
-                ? `${user.firstName} ${user.lastName}`
-                : user?.email || "User"
-              }
+        <Link href="/settings">
+          <div className="flex items-center space-x-3 mb-3 hover:bg-sidebar-accent rounded-lg p-2 -m-2 transition-colors cursor-pointer">
+            <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+              {user?.profileImageUrl ? (
+                <img 
+                  src={user.profileImageUrl} 
+                  alt="Profile" 
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : (
+                <span className="text-sm font-medium text-sidebar-foreground">
+                  {user?.firstName?.[0] || user?.email?.[0] || "U"}
+                </span>
+              )}
             </div>
-            <div className="text-xs text-sidebar-foreground/60">Marketing Team</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium truncate">
+                {user?.firstName && user?.lastName 
+                  ? `${user.firstName} ${user.lastName}`
+                  : user?.email || "User"
+                }
+              </div>
+              <div className="text-xs text-sidebar-foreground/60">My account</div>
+            </div>
+            <Settings className="w-4 h-4 text-sidebar-foreground/60" />
           </div>
-        </div>
+        </Link>
         <Button 
           variant="ghost" 
           size="sm" 

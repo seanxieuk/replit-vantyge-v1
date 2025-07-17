@@ -342,7 +342,7 @@ export default function Settings() {
     return (
       <>
         <Header 
-          title="Account Settings" 
+          title="My Account" 
           subtitle="Manage your account settings and preferences" 
         />
         <main className="flex-1 overflow-y-auto p-6">
@@ -366,7 +366,7 @@ export default function Settings() {
   return (
     <>
       <Header 
-        title="Account Settings" 
+        title="My Account" 
         subtitle="Manage your account settings and preferences" 
       />
 
