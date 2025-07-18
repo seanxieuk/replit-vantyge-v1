@@ -125,6 +125,23 @@ export const rejectedBlogIdeas = pgTable("rejected_blog_ideas", {
   rejectedAt: timestamp("rejected_at").defaultNow(),
 });
 
+// Published blog ideas
+export const publishedBlogIdeas = pgTable("published_blog_ideas", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  ideaData: jsonb("idea_data").notNull(),
+  publicationDate: timestamp("publication_date").notNull(),
+  publishedAt: timestamp("published_at").defaultNow(),
+});
+
+// Deleted blog ideas
+export const deletedBlogIdeas = pgTable("deleted_blog_ideas", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id),
+  ideaData: jsonb("idea_data").notNull(),
+  deletedAt: timestamp("deleted_at").defaultNow(),
+});
+
 // Competitive landscape analysis results
 export const competitiveLandscapeAnalyses = pgTable("competitive_landscape_analyses", {
   id: serial("id").primaryKey(),
@@ -192,3 +209,17 @@ export const insertRejectedBlogIdeaSchema = createInsertSchema(rejectedBlogIdeas
 });
 export type InsertRejectedBlogIdea = z.infer<typeof insertRejectedBlogIdeaSchema>;
 export type RejectedBlogIdea = typeof rejectedBlogIdeas.$inferSelect;
+
+export const insertPublishedBlogIdeaSchema = createInsertSchema(publishedBlogIdeas).omit({
+  id: true,
+  publishedAt: true,
+});
+export type InsertPublishedBlogIdea = z.infer<typeof insertPublishedBlogIdeaSchema>;
+export type PublishedBlogIdea = typeof publishedBlogIdeas.$inferSelect;
+
+export const insertDeletedBlogIdeaSchema = createInsertSchema(deletedBlogIdeas).omit({
+  id: true,
+  deletedAt: true,
+});
+export type InsertDeletedBlogIdea = z.infer<typeof insertDeletedBlogIdeaSchema>;
+export type DeletedBlogIdea = typeof deletedBlogIdeas.$inferSelect;

@@ -6,6 +6,8 @@ import {
   contentItems,
   contentStrategies,
   rejectedBlogIdeas,
+  publishedBlogIdeas,
+  deletedBlogIdeas,
   type User,
   type UpsertUser,
   type Company,
@@ -20,6 +22,8 @@ import {
   type InsertCompetitiveAnalysis,
   type RejectedBlogIdea,
   type InsertRejectedBlogIdea,
+  type PublishedBlogIdea,
+  type DeletedBlogIdea,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
@@ -63,9 +67,14 @@ export interface IStorage {
   getCompetitiveLandscapeAnalysis(companyId: number): Promise<any | null>;
   saveCompetitiveLandscapeAnalysis(companyId: number, analysis: any): Promise<any>;
   
-  // Rejected blog ideas operations
+  // Blog idea lifecycle operations
   rejectBlogIdea(companyId: number, idea: any, rejectionReason: string): Promise<RejectedBlogIdea>;
   getRejectedBlogIdeas(companyId: number): Promise<RejectedBlogIdea[]>;
+  publishBlogIdea(companyId: number, idea: any, publicationDate: string): Promise<PublishedBlogIdea>;
+  getPublishedBlogIdeas(companyId: number): Promise<PublishedBlogIdea[]>;
+  deleteBlogIdea(companyId: number, idea: any): Promise<DeletedBlogIdea>;
+  getDeletedBlogIdeas(companyId: number): Promise<DeletedBlogIdea[]>;
+  getDeletedBlogIdeas(companyId: number): Promise<DeletedBlogIdea[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -273,6 +282,47 @@ export class DatabaseStorage implements IStorage {
       .from(rejectedBlogIdeas)
       .where(eq(rejectedBlogIdeas.companyId, companyId))
       .orderBy(rejectedBlogIdeas.rejectedAt);
+    return ideas;
+  }
+
+  async publishBlogIdea(companyId: number, idea: any, publicationDate: Date): Promise<PublishedBlogIdea> {
+    const [publishedIdea] = await db
+      .insert(publishedBlogIdeas)
+      .values({
+        companyId,
+        ideaData: idea,
+        publicationDate,
+      })
+      .returning();
+    return publishedIdea;
+  }
+
+  async getPublishedBlogIdeas(companyId: number): Promise<PublishedBlogIdea[]> {
+    const ideas = await db
+      .select()
+      .from(publishedBlogIdeas)
+      .where(eq(publishedBlogIdeas.companyId, companyId))
+      .orderBy(publishedBlogIdeas.publicationDate);
+    return ideas;
+  }
+
+  async deleteBlogIdea(companyId: number, idea: any): Promise<DeletedBlogIdea> {
+    const [deletedIdea] = await db
+      .insert(deletedBlogIdeas)
+      .values({
+        companyId,
+        ideaData: idea,
+      })
+      .returning();
+    return deletedIdea;
+  }
+
+  async getDeletedBlogIdeas(companyId: number): Promise<DeletedBlogIdea[]> {
+    const ideas = await db
+      .select()
+      .from(deletedBlogIdeas)
+      .where(eq(deletedBlogIdeas.companyId, companyId))
+      .orderBy(deletedBlogIdeas.deletedAt);
     return ideas;
   }
 }

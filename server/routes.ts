@@ -529,6 +529,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Publish blog idea endpoint
+  app.post('/api/publish-blog-idea', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { idea, publicationDate } = req.body;
+      
+      if (!idea || !publicationDate) {
+        return res.status(400).json({ message: "Blog idea and publication date are required" });
+      }
+
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(400).json({ message: "Company profile not found" });
+      }
+
+      // Store the published idea
+      const publishedIdea = await storage.publishBlogIdea(company.id, idea, new Date(publicationDate));
+      
+      res.json({ message: "Blog idea published successfully", publishedIdea });
+    } catch (error) {
+      console.error("Error publishing blog idea:", error);
+      res.status(500).json({ message: "Failed to publish blog idea" });
+    }
+  });
+
+  // Delete blog idea endpoint
+  app.post('/api/delete-blog-idea', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { idea } = req.body;
+      
+      if (!idea) {
+        return res.status(400).json({ message: "Blog idea is required" });
+      }
+
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(400).json({ message: "Company profile not found" });
+      }
+
+      // Store the deleted idea
+      const deletedIdea = await storage.deleteBlogIdea(company.id, idea);
+      
+      res.json({ message: "Blog idea deleted successfully", deletedIdea });
+    } catch (error) {
+      console.error("Error deleting blog idea:", error);
+      res.status(500).json({ message: "Failed to delete blog idea" });
+    }
+  });
+
   // Get rejected blog ideas endpoint
   app.get('/api/rejected-blog-ideas', isAuthenticated, async (req: any, res) => {
     try {
@@ -545,6 +597,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching rejected blog ideas:", error);
       res.status(500).json({ message: "Failed to fetch rejected blog ideas" });
+    }
+  });
+
+  // Get published blog ideas endpoint
+  app.get('/api/published-blog-ideas', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(400).json({ message: "Company profile not found" });
+      }
+
+      const publishedIdeas = await storage.getPublishedBlogIdeas(company.id);
+      
+      res.json(publishedIdeas);
+    } catch (error) {
+      console.error("Error fetching published blog ideas:", error);
+      res.status(500).json({ message: "Failed to fetch published blog ideas" });
+    }
+  });
+
+  // Get deleted blog ideas endpoint
+  app.get('/api/deleted-blog-ideas', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(400).json({ message: "Company profile not found" });
+      }
+
+      const deletedIdeas = await storage.getDeletedBlogIdeas(company.id);
+      
+      res.json(deletedIdeas);
+    } catch (error) {
+      console.error("Error fetching deleted blog ideas:", error);
+      res.status(500).json({ message: "Failed to fetch deleted blog ideas" });
     }
   });
 
