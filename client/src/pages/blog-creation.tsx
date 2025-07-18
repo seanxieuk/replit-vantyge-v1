@@ -325,7 +325,7 @@ function RejectIdeaDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" aria-describedby="reject-dialog-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500" />
@@ -333,7 +333,7 @@ function RejectIdeaDialog({
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div>
+          <div id="reject-dialog-description">
             <p className="text-sm text-gray-600 mb-2">
               You're about to reject: <strong>{idea?.title}</strong>
             </p>
@@ -625,6 +625,7 @@ export default function BlogCreationPage() {
   const hasPrerequisites = company;
   const hasCompetitiveData = competitors && competitors.length > 0;
   const hasPositioningData = positioningRecommendations && positioningRecommendations.length > 0;
+  const allDataSourcesComplete = hasPrerequisites && hasCompetitiveData && hasPositioningData;
 
   return (
     <>
@@ -635,214 +636,206 @@ export default function BlogCreationPage() {
 
       <main className="flex-1 overflow-y-auto p-6">
         <div className="max-w-[1028px] mx-auto space-y-6">
-          {/* Prerequisites Check */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
-                Data Sources
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center gap-3">
-                  {company ? (
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />
-                  )}
-                  <div>
-                    <span className={company ? "text-green-700 font-medium" : "text-gray-500"}>
-                      Company Profile
-                    </span>
-                    <p className="text-xs text-gray-500">Required for topic generation</p>
+          {/* Prerequisites Check - Only show if not all data sources are complete */}
+          {!allDataSourcesComplete && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  Data Sources
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex items-center gap-3">
+                    {company ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />
+                    )}
+                    <div>
+                      <span className={company ? "text-green-700 font-medium" : "text-gray-500"}>
+                        Company Profile
+                      </span>
+                      <p className="text-xs text-gray-500">Required for topic generation</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    {hasCompetitiveData ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />
+                    )}
+                    <div>
+                      <span className={hasCompetitiveData ? "text-green-700 font-medium" : "text-gray-500"}>
+                        Competitive Analysis
+                      </span>
+                      <p className="text-xs text-gray-500">Enhances topic relevance</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    {hasPositioningData ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />
+                    )}
+                    <div>
+                      <span className={hasPositioningData ? "text-green-700 font-medium" : "text-gray-500"}>
+                        Positioning Insights
+                      </span>
+                      <p className="text-xs text-gray-500">Refines messaging approach</p>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-3">
-                  {hasCompetitiveData ? (
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />
-                  )}
-                  <div>
-                    <span className={hasCompetitiveData ? "text-green-700 font-medium" : "text-gray-500"}>
-                      Competitive Analysis
-                    </span>
-                    <p className="text-xs text-gray-500">Enhances topic relevance</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  {hasPositioningData ? (
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <div className="h-5 w-5 border-2 border-gray-300 rounded-full" />
-                  )}
-                  <div>
-                    <span className={hasPositioningData ? "text-green-700 font-medium" : "text-gray-500"}>
-                      Positioning Insights
-                    </span>
-                    <p className="text-xs text-gray-500">Refines messaging approach</p>
-                  </div>
-                </div>
-              </div>
 
-              {!hasPrerequisites && (
-                <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
-                  <p className="text-sm text-yellow-800">
-                    Complete your company profile to enable AI-powered blog topic generation.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Topic Generation */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5" />
-                AI Topic Generator
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {hasPrerequisites ? (
-                <div className="text-center">
-                  <div className="mb-4">
-                    <p className="text-gray-600 mb-2">
-                      Generate personalized blog topics based on your company profile
-                      {hasCompetitiveData && ", competitive analysis"}
-                      {hasPositioningData && ", and positioning insights"}.
+                {!hasPrerequisites && (
+                  <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      Complete your company profile to enable AI-powered blog topic generation.
                     </p>
                   </div>
-                  <Button
-                    onClick={handleGenerateIdeas}
-                    disabled={generateIdeasMutation.isPending}
-                    size="lg"
-                    className="px-8"
-                    style={{ backgroundColor: '#409452' }}
-                  >
-                    {generateIdeasMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Generating Ideas...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        Generate Topic Ideas
-                      </>
-                    )}
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Brain className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Company Profile Required</h3>
-                  <p className="text-gray-600 mb-4">
-                    Complete your company setup to unlock AI-powered blog topic generation.
-                  </p>
-                  <Button variant="outline" onClick={() => window.location.href = "/company"}>
-                    Complete Company Setup
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Blog Ideas Tabs */}
-          {((blogIdeas && blogIdeas.length > 0) || (rejectedIdeas && rejectedIdeas.length > 0)) && (
-            <Tabs defaultValue="current" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="current">
-                  Current Recommendations ({blogIdeas?.length || 0})
-                </TabsTrigger>
-                <TabsTrigger value="rejected">
-                  Rejected Ideas ({rejectedIdeas?.length || 0})
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="current" className="space-y-6">
-                {blogIdeas && blogIdeas.length > 0 ? (
-                  <div>
-                    <div className="mb-6">
-                      <h2 className="text-xl font-semibold text-gray-900 mb-2">Current Topic Recommendations</h2>
-                      <p className="text-gray-600">
-                        AI-generated blog topics tailored to your company and market positioning
-                      </p>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {blogIdeas.map((idea) => (
-                        <BlogIdeaCard
-                          key={idea.id}
-                          idea={idea}
-                          onGenerate={handleGenerateArticle}
-                          onReject={handleRejectIdea}
-                          generatingArticleId={generatingArticleId}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <Card>
-                    <CardContent className="text-center py-12">
-                      <Lightbulb className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Current Recommendations</h3>
-                      <p className="text-gray-600 mb-4">
-                        Generate new topic ideas to see recommendations here.
-                      </p>
-                    </CardContent>
-                  </Card>
                 )}
-              </TabsContent>
-              
-              <TabsContent value="rejected" className="space-y-6">
-                {rejectedIdeas && rejectedIdeas.length > 0 ? (
-                  <div>
-                    <div className="mb-6">
-                      <h2 className="text-xl font-semibold text-gray-900 mb-2">Rejected Ideas</h2>
-                      <p className="text-gray-600">
-                        Previously rejected topics with your feedback to help improve future AI recommendations
-                      </p>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {rejectedIdeas.map((rejectedIdea) => (
-                        <RejectedIdeaCard
-                          key={rejectedIdea.id}
-                          rejectedIdea={rejectedIdea}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <Card>
-                    <CardContent className="text-center py-12">
-                      <X className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Rejected Ideas</h3>
-                      <p className="text-gray-600 mb-4">
-                        When you reject topic ideas, they'll appear here with your feedback to help train our AI.
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </TabsContent>
-            </Tabs>
+              </CardContent>
+            </Card>
           )}
 
-          {hasPrerequisites && (!blogIdeas || blogIdeas.length === 0) && !isLoadingIdeas && !generateIdeasMutation.isPending && (
+          {/* Blog Ideas Section */}
+          {hasPrerequisites && (
+            <div className="space-y-6">
+              {/* Header with Generate Button */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Blog Topic Ideas</h2>
+                  <p className="text-gray-600 mt-1">
+                    AI-generated blog topics tailored to your company and market positioning
+                  </p>
+                </div>
+                <Button
+                  onClick={handleGenerateIdeas}
+                  disabled={generateIdeasMutation.isPending}
+                  className="px-6"
+                  style={{ backgroundColor: '#409452' }}
+                >
+                  {generateIdeasMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Generate New Ideas
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Tabs */}
+              {((blogIdeas && blogIdeas.length > 0) || (rejectedIdeas && rejectedIdeas.length > 0)) ? (
+                <Tabs defaultValue="current" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="current">
+                      Current Recommendations ({blogIdeas?.length || 0})
+                    </TabsTrigger>
+                    <TabsTrigger value="rejected">
+                      Rejected Ideas ({rejectedIdeas?.length || 0})
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="current" className="space-y-6">
+                    {blogIdeas && blogIdeas.length > 0 ? (
+                      <div>
+                        <div className="mb-6">
+                          <h2 className="text-xl font-semibold text-gray-900 mb-2">Current Topic Recommendations</h2>
+                          <p className="text-gray-600">
+                            AI-generated blog topics tailored to your company and market positioning
+                          </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          {blogIdeas.map((idea) => (
+                            <BlogIdeaCard
+                              key={idea.id}
+                              idea={idea}
+                              onGenerate={handleGenerateArticle}
+                              onReject={handleRejectIdea}
+                              generatingArticleId={generatingArticleId}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <Card>
+                        <CardContent className="text-center py-12">
+                          <Lightbulb className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">No Current Recommendations</h3>
+                          <p className="text-gray-600 mb-4">
+                            Generate new topic ideas to see recommendations here.
+                          </p>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="rejected" className="space-y-6">
+                    {rejectedIdeas && rejectedIdeas.length > 0 ? (
+                      <div>
+                        <div className="mb-6">
+                          <h2 className="text-xl font-semibold text-gray-900 mb-2">Rejected Ideas</h2>
+                          <p className="text-gray-600">
+                            Previously rejected topics with your feedback to help improve future AI recommendations
+                          </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          {rejectedIdeas.map((rejectedIdea) => (
+                            <RejectedIdeaCard
+                              key={rejectedIdea.id}
+                              rejectedIdea={rejectedIdea}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <Card>
+                        <CardContent className="text-center py-12">
+                          <X className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">No Rejected Ideas</h3>
+                          <p className="text-gray-600 mb-4">
+                            When you reject topic ideas, they'll appear here with your feedback to help train our AI.
+                          </p>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              ) : (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <Lightbulb className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Topics Generated Yet</h3>
+                    <p className="text-gray-600 mb-4">
+                      Click "Generate New Ideas" to create personalized blog topics for your company.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* Company Setup Required */}
+          {!hasPrerequisites && (
             <Card>
               <CardContent className="text-center py-12">
-                <Lightbulb className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Topics Generated Yet</h3>
+                <Brain className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Company Profile Required</h3>
                 <p className="text-gray-600 mb-4">
-                  Click "Generate Topic Ideas" to create personalized blog topics for your company.
+                  Complete your company setup to unlock AI-powered blog topic generation.
                 </p>
-                <Button onClick={handleGenerateIdeas} disabled={generateIdeasMutation.isPending}>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Generate Topic Ideas
+                <Button variant="outline" onClick={() => window.location.href = "/company"}>
+                  Complete Company Setup
                 </Button>
               </CardContent>
             </Card>
