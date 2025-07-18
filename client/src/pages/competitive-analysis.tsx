@@ -227,7 +227,7 @@ export default function CompetitiveAnalysisPage() {
   // Query for existing competitive landscape analysis
   const { data: existingLandscapeAnalysis } = useQuery({
     queryKey: ["/api/competitive-landscape-analysis"],
-    enabled: !!user,
+    enabled: false, // Disable automatic fetching
     retry: false,
   });
 

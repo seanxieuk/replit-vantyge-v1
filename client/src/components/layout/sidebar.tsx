@@ -1,29 +1,62 @@
-import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { 
-  Brain, 
-  BarChart3, 
-  Building, 
-  Search, 
-  Target, 
-  Lightbulb, 
-  PenTool, 
-  Calendar, 
+import {
+  BarChart3,
+  Building2,
+  Target,
+  Lightbulb,
+  TrendingUp,
+  FileText,
+  Calendar,
+  PenTool,
+  Megaphone,
+  Handshake,
+  Users,
+  MessageSquare,
+  Newspaper,
+  Star,
   Settings,
-  LogOut
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoSvg from "@assets/2_color_light.svg";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: BarChart3, group: "Overview" },
-  { name: "My Company", href: "/company", icon: Building, group: "Overview" },
-  { name: "Competitive Analysis", href: "/competitive-analysis", icon: Search, group: "AI Tools" },
-  { name: "Positioning Workshops", href: "/positioning-workshops", icon: Target, group: "AI Tools" },
-  { name: "Blog Creation", href: "/blog-creation", icon: PenTool, group: "AI Tools" },
-  { name: "Content Calendar", href: "/content-calendar", icon: Calendar, group: "AI Tools" },
+  {
+    title: "Overview",
+    items: [
+      { name: "Dashboard", href: "/", icon: BarChart3 },
+    ],
+  },
+  {
+    title: "Strategy",
+    items: [
+      { name: "My Company", href: "/company", icon: Building2 },
+      { name: "Competitive Analysis", href: "/competitive-analysis", icon: Target },
+      { name: "Positioning Workshop", href: "/positioning-workshops", icon: Lightbulb },
+      { name: "Growth Strategy", href: "/growth-strategy", icon: TrendingUp },
+    ],
+  },
+  {
+    title: "Content",
+    items: [
+      { name: "Content Strategy", href: "/content-strategy", icon: FileText },
+      { name: "Content Calendar", href: "/content-calendar", icon: Calendar },
+      { name: "Blog Creation", href: "/blog-creation", icon: PenTool },
+    ],
+  },
+  {
+    title: "Distribution",
+    items: [
+      { name: "Advertising", href: "/advertising", icon: Megaphone },
+      { name: "Partnerships", href: "/partnerships", icon: Handshake },
+      { name: "Influencers", href: "/influencers", icon: Users },
+      { name: "Community", href: "/community", icon: MessageSquare },
+      { name: "PR", href: "/pr", icon: Newspaper },
+      { name: "Sponsored Events", href: "/sponsored-events", icon: Star },
+    ],
+  },
 ];
 
 export default function Sidebar() {
@@ -33,15 +66,6 @@ export default function Sidebar() {
   const handleLogout = () => {
     window.location.href = "/api/logout";
   };
-
-  // Group navigation items
-  const groupedNav = navigation.reduce((acc, item) => {
-    if (!acc[item.group]) {
-      acc[item.group] = [];
-    }
-    acc[item.group].push(item);
-    return acc;
-  }, {} as Record<string, typeof navigation>);
 
   return (
     <div className="w-64 bg-sidebar-background text-sidebar-foreground flex flex-col min-h-screen" style={{ backgroundColor: 'hsl(220, 26%, 14%)' }}>
@@ -57,17 +81,18 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-1 bg-sidebar-background" style={{ backgroundColor: 'hsl(220, 26%, 14%)' }}>
-        {Object.entries(groupedNav).map(([group, items]) => (
-          <div key={group}>
-            <div className="text-xs font-medium text-sidebar-foreground/60 uppercase tracking-wider mb-3">
-              {group}
-            </div>
-            <div className="space-y-1 mb-6">
-              {items.map((item) => {
+      <nav className="flex-1 px-4 py-6 space-y-6 bg-sidebar-background" style={{ backgroundColor: 'hsl(220, 26%, 14%)' }}>
+        {navigation.map((section) => (
+          <div key={section.title}>
+            <h3 className="px-3 text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider mb-3">
+              {section.title}
+            </h3>
+            <div className="space-y-1">
+              {section.items.map((item) => {
+                const Icon = item.icon;
                 const isActive = location === item.href;
                 return (
-                  <Link key={item.name} href={item.href}>
+                  <Link key={item.href} href={item.href}>
                     <div
                       className={cn(
                         "flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer",
@@ -76,7 +101,7 @@ export default function Sidebar() {
                           : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       )}
                     >
-                      <item.icon className="w-5 h-5 mr-3" />
+                      <Icon className="mr-3 h-5 w-5" />
                       {item.name}
                     </div>
                   </Link>

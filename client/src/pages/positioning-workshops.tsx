@@ -147,7 +147,7 @@ export default function PositioningWorkshopsPage() {
 
   const { data: recommendations, isLoading } = useQuery<PositioningRecommendation[]>({
     queryKey: ["/api/positioning-recommendations"],
-    enabled: !!user,
+    enabled: false, // Disable automatic fetching
     retry: false,
   });
 
@@ -161,7 +161,7 @@ export default function PositioningWorkshopsPage() {
     recommendations: PositioningRecommendation[];
   }>({
     queryKey: ["/api/positioning-analysis"],
-    enabled: !!user,
+    enabled: false, // Disable automatic fetching
     retry: false,
   });
 
