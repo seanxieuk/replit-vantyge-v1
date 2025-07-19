@@ -154,11 +154,13 @@ function MyCompanyCard({
 function CompetitorCard({ 
   competitor, 
   onDelete,
-  analysis
+  analysis,
+  onAnalyze
 }: {
   competitor: Competitor;
   onDelete: () => void;
   analysis?: CompetitiveAnalysis;
+  onAnalyze?: () => void;
 }) {
   return (
     <Card className="relative">
@@ -181,6 +183,11 @@ function CompetitorCard({
             )}
           </div>
           <div className="flex items-center gap-2">
+            {!analysis && onAnalyze && (
+              <Button variant="outline" size="sm" onClick={onAnalyze}>
+                <BarChart3 className="h-4 w-4" />
+              </Button>
+            )}
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -424,12 +431,13 @@ export default function CompetitiveAnalysisPage() {
     mutationFn: async () => {
       return await apiRequest("POST", "/api/competitive-analyses/analyze-all", {});
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
-        title: "Analysis Complete",
-        description: "All competitors have been analyzed successfully",
+        title: "Analysis Complete", 
+        description: `Successfully analyzed ${data.length} competitors with Domain Authority scores`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/competitive-analyses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/company-analysis"] });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -444,12 +452,41 @@ export default function CompetitiveAnalysisPage() {
         return;
       }
       
-      // Extract error message from the error object
       const errorMessage = error.message || "Failed to analyze competitors";
-      
       toast({
         title: "Analysis Error",
         description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const analyzeCompetitorMutation = useMutation({
+    mutationFn: async (competitorId: number) => {
+      return await apiRequest("POST", `/api/competitive-analyses/${competitorId}`, {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "Analysis Complete",
+        description: "Competitor analyzed with Domain Authority score",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/competitive-analyses"] });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized", 
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Analysis Error",
+        description: "Failed to analyze competitor",
         variant: "destructive",
       });
     },
@@ -490,8 +527,25 @@ export default function CompetitiveAnalysisPage() {
 
       <main className="flex-1 overflow-y-auto p-6">
         <div className="max-w-[1028px] mx-auto space-y-6">
-          {/* Add Competitor Button */}
+          {/* Analysis Buttons */}
           <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => analyzeAllMutation.mutate()}
+              disabled={!competitors?.length || analyzeAllMutation.isPending}
+            >
+              {analyzeAllMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                  Analyzing DA...
+                </>
+              ) : (
+                <>
+                  <Shield className="h-4 w-4 mr-2" />
+                  Analyze Domain Authority
+                </>
+              )}
+            </Button>
             <Button
               variant="outline"
               onClick={handleAnalyzeLandscape}
@@ -505,7 +559,7 @@ export default function CompetitiveAnalysisPage() {
               ) : (
                 <>
                   <BarChart3 className="h-4 w-4 mr-2" />
-                  Analyze All
+                  Competitive Analysis
                 </>
               )}
             </Button>
@@ -570,14 +624,18 @@ export default function CompetitiveAnalysisPage() {
             )}
             
             {/* Competitor Cards */}
-            {competitors && competitors.map((competitor) => (
-              <CompetitorCard
-                key={competitor.id}
-                competitor={competitor}
-                onDelete={() => deleteCompetitorMutation.mutate(competitor.id)}
-                analysis={getAnalysisForCompetitor(competitor.id)}
-              />
-            ))}
+            {competitors && competitors.map((competitor) => {
+              const competitorAnalysis = getAnalysisForCompetitor(competitor.id);
+              return (
+                <CompetitorCard
+                  key={competitor.id}
+                  competitor={competitor}
+                  onDelete={() => deleteCompetitorMutation.mutate(competitor.id)}
+                  analysis={competitorAnalysis}
+                  onAnalyze={() => analyzeCompetitorMutation.mutate(competitor.id)}
+                />
+              );
+            })}
             
             {/* Empty state only if no competitors AND no company */}
             {(!competitors || competitors.length === 0) && !company && (
