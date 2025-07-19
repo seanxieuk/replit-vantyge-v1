@@ -79,6 +79,7 @@ export const competitiveAnalyses = pgTable("competitive_analyses", {
   linkingDomains: integer("linking_domains"),
   totalLinks: integer("total_links"),
   seoStrength: text("seo_strength"),
+  topKeywords: text("top_keywords").array(), // Generic industry keywords (excluding brand names)
   insights: text("insights"),
   threats: text("threats"),
   opportunities: text("opportunities"),

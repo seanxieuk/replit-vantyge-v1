@@ -265,8 +265,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Competitor not found" });
       }
       
-      // Get real SEO data from Moz API
-      const mozData = await mozApi.analyzeCompetitor(competitor.website || '');
+      // Get real SEO data from Moz API with keywords
+      const mozData = await mozApi.analyzeCompetitor(competitor.website || '', competitor.name);
       
       // Generate AI insights using OpenAI with company context
       const aiInsights = await analyzeCompetitor(competitor.name, competitor.website || '', mozData, company);
@@ -280,6 +280,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         linkingDomains: mozData.linkingDomains,
         totalLinks: mozData.totalLinks,
         seoStrength: mozData.seoStrength,
+        topKeywords: mozData.topKeywords,
         insights: aiInsights.insights,
         threats: aiInsights.threats,
         opportunities: aiInsights.opportunities,
@@ -319,8 +320,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         try {
-          // Get real SEO data from Moz API (with fallback)
-          const mozData = await mozApi.analyzeCompetitor(competitor.website || competitor.name || '');
+          // Get real SEO data from Moz API (with fallback) including keywords
+          const mozData = await mozApi.analyzeCompetitor(competitor.website || competitor.name || '', competitor.name);
           
           // Generate AI insights using OpenAI with company context
           const aiInsights = await analyzeCompetitor(competitor.name, competitor.website || '', mozData, company);
@@ -334,6 +335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             linkingDomains: mozData.linkingDomains,
             totalLinks: mozData.totalLinks,
             seoStrength: mozData.seoStrength,
+            topKeywords: mozData.topKeywords,
             insights: aiInsights.insights,
             threats: aiInsights.threats,
             opportunities: aiInsights.opportunities,

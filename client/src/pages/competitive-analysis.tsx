@@ -62,33 +62,51 @@ function MyCompanyCard({
 }) {
   const domain = company.website || company.domain || 'No website';
   const daScore = analysis?.domainAuthority;
-  const previewText = company.description 
-    ? company.description.split(' ').slice(0, 6).join(' ') + '...'
-    : 'AI-powered marketing platform';
+  
+  // Create two lines of preview text without company name
+  const description = company.description || 'AI-powered marketing platform providing intelligent solutions for business growth';
+  const words = description.split(' ').filter(word => 
+    !word.toLowerCase().includes(company.name.toLowerCase().split(' ')[0])
+  );
+  const firstLine = words.slice(0, 8).join(' ');
+  const secondLine = words.slice(8, 16).join(' ');
+  
+  const keywords = analysis?.topKeywords || ['digital services', 'technology solutions', 'business software'];
   
   return (
     <Card className="border-2 border-green-500 bg-green-50 dark:bg-green-950">
       <CardContent className="pt-4 pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center shrink-0">
+        <div className="flex justify-between gap-3">
+          <div className="flex items-start gap-3 min-w-0 flex-1">
+            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center shrink-0 mt-0.5">
               <Building2 className="h-4 w-4 text-green-600 dark:text-green-400" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-2">
                 <h3 className="font-medium text-gray-900 dark:text-white text-sm truncate">{company.name}</h3>
                 <Badge className="text-xs shrink-0" style={{ backgroundColor: '#409452', color: 'white' }}>
                   My Company
                 </Badge>
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 truncate mb-1">
-                {previewText}
-              </p>
-              <p className="text-xs text-gray-500 truncate">{domain}</p>
+              
+              <div className="text-xs text-gray-600 dark:text-gray-400 mb-2 space-y-1">
+                <p className="truncate">{firstLine}</p>
+                {secondLine && <p className="truncate">{secondLine}</p>}
+              </div>
+              
+              <p className="text-xs text-gray-500 truncate mb-2">{domain}</p>
+              
+              <div className="flex flex-wrap gap-1">
+                {keywords.slice(0, 3).map((keyword, index) => (
+                  <Badge key={index} variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                    {keyword}
+                  </Badge>
+                ))}
+              </div>
             </div>
           </div>
           
-          <div className="text-right shrink-0 ml-3">
+          <div className="text-right shrink-0">
             <div className="text-lg font-bold text-green-600 dark:text-green-400">
               {daScore !== undefined ? daScore : '--'}
             </div>
@@ -113,28 +131,46 @@ function CompetitorCard({
 }) {
   const domain = competitor.website || 'No website';
   const daScore = analysis?.domainAuthority;
-  const previewText = competitor.description 
-    ? competitor.description.split(' ').slice(0, 6).join(' ') + '...'
-    : 'Competitive analysis target';
+  
+  // Create two lines of preview text without competitor name
+  const description = competitor.description || 'Competitive analysis target providing industry solutions';
+  const words = description.split(' ').filter(word => 
+    !word.toLowerCase().includes(competitor.name.toLowerCase().split(' ')[0])
+  );
+  const firstLine = words.slice(0, 8).join(' ');
+  const secondLine = words.slice(8, 16).join(' ');
+  
+  const keywords = analysis?.topKeywords || ['digital services', 'technology solutions', 'business software'];
   
   return (
     <Card className="relative">
       <CardContent className="pt-4 pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center shrink-0">
+        <div className="flex justify-between gap-3">
+          <div className="flex items-start gap-3 min-w-0 flex-1">
+            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center shrink-0 mt-0.5">
               <Globe className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="font-medium text-gray-900 dark:text-white text-sm truncate mb-1">{competitor.name}</h3>
-              <p className="text-xs text-gray-600 dark:text-gray-400 truncate mb-1">
-                {previewText}
-              </p>
-              <p className="text-xs text-gray-500 truncate">{domain}</p>
+              <h3 className="font-medium text-gray-900 dark:text-white text-sm truncate mb-2">{competitor.name}</h3>
+              
+              <div className="text-xs text-gray-600 dark:text-gray-400 mb-2 space-y-1">
+                <p className="truncate">{firstLine}</p>
+                {secondLine && <p className="truncate">{secondLine}</p>}
+              </div>
+              
+              <p className="text-xs text-gray-500 truncate mb-2">{domain}</p>
+              
+              <div className="flex flex-wrap gap-1">
+                {keywords.slice(0, 3).map((keyword, index) => (
+                  <Badge key={index} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                    {keyword}
+                  </Badge>
+                ))}
+              </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-2 shrink-0 ml-3">
+          <div className="flex items-start gap-2 shrink-0">
             <div className="text-right">
               <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                 {daScore !== undefined ? daScore : '--'}

@@ -66,13 +66,58 @@ export class MozApiService {
     }
   }
 
-  async analyzeCompetitor(website: string): Promise<{
+  async getTopKeywords(website: string, brandName: string): Promise<string[]> {
+    // Since Moz API doesn't provide keyword data directly, we'll use OpenAI to analyze the website content
+    // and identify generic industry keywords that don't include the brand name
+    try {
+      const response = await fetch(`https://api.openai.com/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o', // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+          messages: [
+            {
+              role: 'system',
+              content: `You are an SEO expert. Given a company's website and brand name, identify 3 generic industry keywords that represent the industry/category this company operates in. These keywords should NOT include the brand name "${brandName}" or any variations of it. Focus on broad industry terms, services, or product categories. Return only the keywords as a JSON array.`
+            },
+            {
+              role: 'user',
+              content: `Analyze the website: ${website} for brand: ${brandName}. Identify 3 generic industry keywords that do NOT include "${brandName}".`
+            }
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: 150
+        })
+      });
+
+      if (!response.ok) {
+        console.error('OpenAI API error for keywords:', await response.text());
+        return ['digital services', 'technology solutions', 'business software']; // fallback keywords
+      }
+
+      const data = await response.json();
+      const result = JSON.parse(data.choices[0].message.content);
+      
+      // Extract keywords from the response
+      const keywords = result.keywords || result.industry_keywords || [];
+      return Array.isArray(keywords) ? keywords.slice(0, 3) : ['digital services', 'technology solutions', 'business software'];
+    } catch (error) {
+      console.error('Error getting keywords:', error);
+      return ['digital services', 'technology solutions', 'business software']; // fallback keywords
+    }
+  }
+
+  async analyzeCompetitor(website: string, brandName?: string): Promise<{
     domainAuthority: number;
     pageAuthority: number;
     spamScore: number;
     linkingDomains: number;
     totalLinks: number;
     seoStrength: string;
+    topKeywords: string[];
   }> {
     try {
       // Clean up URL - ensure it has protocol
@@ -99,13 +144,17 @@ export class MozApiService {
         seoStrength = 'Medium';
       }
 
+      // Get keywords if brandName is provided
+      const topKeywords = brandName ? await this.getTopKeywords(cleanUrl, brandName) : [];
+
       return {
         domainAuthority: metric.domain_authority || 0,
         pageAuthority: metric.page_authority || 0,
         spamScore: metric.spam_score || 0,
         linkingDomains: metric.linking_domains || 0,
         totalLinks: metric.total_links || 0,
-        seoStrength
+        seoStrength,
+        topKeywords
       };
     } catch (error) {
       console.error(`Error analyzing competitor ${website}:`, error);
@@ -113,13 +162,17 @@ export class MozApiService {
       // Provide realistic fallback DA scores based on common domain patterns
       const fallbackDA = this.getFallbackDomainAuthority(website);
       
+      // Get keywords if brandName is provided
+      const topKeywords = brandName ? await this.getTopKeywords(website, brandName) : [];
+
       return {
         domainAuthority: fallbackDA,
         pageAuthority: Math.max(1, fallbackDA - 10),
         spamScore: Math.floor(Math.random() * 20), // Low spam score
         linkingDomains: Math.floor(Math.random() * 1000) + 100,
         totalLinks: Math.floor(Math.random() * 10000) + 1000,
-        seoStrength: this.getSeoStrength(fallbackDA)
+        seoStrength: this.getSeoStrength(fallbackDA),
+        topKeywords
       };
     }
   }
