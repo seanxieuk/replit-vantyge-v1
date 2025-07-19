@@ -142,3 +142,7 @@ Layout preference: Maximum content width of 1028px for optimal viewing on large 
 ✓ Fixed expensive API calls in Competitive Analysis and Positioning Workshop pages to only run when users click buttons
 ✓ Enhanced cost efficiency and user control over AI-powered features
 ✓ Added all new routes to App.tsx for proper navigation integration
+✓ **NEW FEATURE**: Integrated "My Company" as highlighted player in competitive analysis with green border and "My Company" badge
+✓ **MOZ INTEGRATION**: Added Domain Authority (DA) scores for all domains including company domain using Moz SEO API
+✓ **UI ENHANCEMENT**: Added comprehensive Domain Authority explanation section with scoring guide (1-30 Weak, 31-50 Medium, 51-70 Strong, 71-100 Very Strong)
+✓ **API ENDPOINTS**: Created company-analysis endpoint to fetch company DA scores and analyze-all endpoint for competitor analysis

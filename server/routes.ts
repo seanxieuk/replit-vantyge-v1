@@ -145,12 +145,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Company not found" });
       }
 
-      if (!company.website) {
-        return res.status(400).json({ message: "Company website not provided" });
+      const websiteUrl = company.website || company.domain;
+      if (!websiteUrl) {
+        return res.status(400).json({ message: "Company website or domain not provided" });
       }
 
       // Use Moz API to analyze company's domain
-      const mozAnalysis = await mozApi.analyzeCompetitor(company.website);
+      const mozAnalysis = await mozApi.analyzeCompetitor(websiteUrl);
       
       res.json({
         id: `company-${company.id}`,

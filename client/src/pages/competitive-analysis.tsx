@@ -336,9 +336,9 @@ export default function CompetitiveAnalysisPage() {
   });
 
   // Fetch company domain authority
-  const { data: companyAnalysis } = useQuery<CompetitiveAnalysis>({
+  const { data: companyAnalysis, error: companyAnalysisError } = useQuery<CompetitiveAnalysis>({
     queryKey: ["/api/company-analysis"],
-    enabled: !!user && !!company?.website,
+    enabled: !!user && !!(company?.website || company?.domain),
     retry: false,
   });
 
@@ -471,7 +471,7 @@ export default function CompetitiveAnalysisPage() {
 
   // Use saved analysis if available, otherwise use real-time analysis
   const displayAnalysis = existingLandscapeAnalysis || landscapeAnalysis;
-  const showAnalysisResults = displayAnalysis && (existingLandscapeAnalysis || analysisType === 'competitive');
+  const showAnalysisResults = displayAnalysis && Object.keys(displayAnalysis).length > 0;
 
   if (isLoading) {
     return (
