@@ -52,6 +52,105 @@ function Header({ title, subtitle }: Header) {
   );
 }
 
+function MyCompanyCard({ 
+  company,
+  analysis
+}: {
+  company: any;
+  analysis?: CompetitiveAnalysis;
+}) {
+  return (
+    <Card className="relative border-2 border-green-500 bg-green-50 dark:bg-green-950">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Target className="h-5 w-5 text-green-600" />
+              {company.name}
+              <Badge className="ml-2" style={{ backgroundColor: '#409452', color: 'white' }}>
+                My Company
+              </Badge>
+            </CardTitle>
+            {company.website && (
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-sm text-gray-500">{company.website}</p>
+                {analysis?.domainAuthority !== undefined && (
+                  <Badge variant="outline" className="text-xs">
+                    DA: {analysis.domainAuthority}
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {company.description && (
+          <p className="text-sm text-gray-600 mb-4">{company.description}</p>
+        )}
+        
+        {analysis && (
+          <div className="space-y-4">
+            <Separator />
+            
+            {/* SEO Strength */}
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-green-600" />
+              <span className="text-sm font-medium">SEO Strength:</span>
+              <Badge variant={analysis.seoStrength === 'Strong' || analysis.seoStrength === 'Very Strong' ? 'default' : 'secondary'}>
+                {analysis.seoStrength || 'Unknown'}
+              </Badge>
+            </div>
+            
+            {/* SEO Metrics */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              {analysis.domainAuthority !== undefined && (
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium">Domain Authority:</span>
+                  <span className="text-sm font-bold">{analysis.domainAuthority}/100</span>
+                </div>
+              )}
+              
+              {analysis.pageAuthority !== undefined && (
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium">Page Authority:</span>
+                  <span className="text-sm font-bold">{analysis.pageAuthority}/100</span>
+                </div>
+              )}
+              
+              {analysis.spamScore !== undefined && (
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                  <span className="text-sm font-medium">Spam Score:</span>
+                  <span className="text-sm font-bold">{analysis.spamScore}/100</span>
+                </div>
+              )}
+              
+              {analysis.linkingDomains !== undefined && (
+                <div className="flex items-center gap-2">
+                  <LinkIcon className="h-4 w-4 text-purple-600" />
+                  <span className="text-sm font-medium">Linking Domains:</span>
+                  <span className="text-sm font-bold">{analysis.linkingDomains.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Insights */}
+            {analysis.insights && (
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Key Insights:</h4>
+                <p className="text-sm text-gray-600">{analysis.insights}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function CompetitorCard({ 
   competitor, 
   onDelete,
@@ -71,7 +170,14 @@ function CompetitorCard({
               {competitor.name}
             </CardTitle>
             {competitor.website && (
-              <p className="text-sm text-gray-500 mt-1">{competitor.website}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-sm text-gray-500">{competitor.website}</p>
+                {analysis?.domainAuthority !== undefined && (
+                  <Badge variant="outline" className="text-xs">
+                    DA: {analysis.domainAuthority}
+                  </Badge>
+                )}
+              </div>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -214,6 +320,11 @@ export default function CompetitiveAnalysisPage() {
   });
 
 
+  const { data: company } = useQuery({
+    queryKey: ["/api/company"],
+    enabled: !!user,
+  });
+
   const { data: competitors, isLoading } = useQuery<Competitor[]>({
     queryKey: ["/api/competitors"],
     enabled: !!user,
@@ -222,6 +333,13 @@ export default function CompetitiveAnalysisPage() {
   const { data: analyses } = useQuery<CompetitiveAnalysis[]>({
     queryKey: ["/api/competitive-analyses"],
     enabled: !!user,
+  });
+
+  // Fetch company domain authority
+  const { data: companyAnalysis } = useQuery<CompetitiveAnalysis>({
+    queryKey: ["/api/company-analysis"],
+    enabled: !!user && !!company?.website,
+    retry: false,
   });
 
   // Query for existing competitive landscape analysis
@@ -441,31 +559,60 @@ export default function CompetitiveAnalysisPage() {
             </Dialog>
           </div>
 
-          {/* Competitors Grid */}
-          {competitors && competitors.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {competitors.map((competitor) => (
-                <CompetitorCard
-                  key={competitor.id}
-                  competitor={competitor}
-                  onDelete={() => deleteCompetitorMutation.mutate(competitor.id)}
-                  analysis={getAnalysisForCompetitor(competitor.id)}
-                />
-              ))}
-            </div>
-          ) : (
-            <Card className="text-center p-12">
-              <div className="flex flex-col items-center space-y-4">
-                <Search className="h-12 w-12 text-gray-400" />
-                <h3 className="text-lg font-medium text-gray-900">No competitors added yet</h3>
-                <p className="text-gray-600">Start by adding your first competitor to begin competitive analysis</p>
-                <Button onClick={() => setShowAddForm(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Competitor
-                </Button>
+          {/* Competitive Landscape Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* My Company Card - Always displayed first */}
+            {company && (
+              <MyCompanyCard
+                company={company}
+                analysis={companyAnalysis}
+              />
+            )}
+            
+            {/* Competitor Cards */}
+            {competitors && competitors.map((competitor) => (
+              <CompetitorCard
+                key={competitor.id}
+                competitor={competitor}
+                onDelete={() => deleteCompetitorMutation.mutate(competitor.id)}
+                analysis={getAnalysisForCompetitor(competitor.id)}
+              />
+            ))}
+            
+            {/* Empty state only if no competitors AND no company */}
+            {(!competitors || competitors.length === 0) && !company && (
+              <Card className="text-center p-12 col-span-full">
+                <div className="flex flex-col items-center space-y-4">
+                  <Search className="h-12 w-12 text-gray-400" />
+                  <h3 className="text-lg font-medium text-gray-900">No competitors added yet</h3>
+                  <p className="text-gray-600">Start by adding your first competitor to begin competitive analysis</p>
+                  <Button onClick={() => setShowAddForm(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Competitor
+                  </Button>
+                </div>
+              </Card>
+            )}
+          </div>
+
+          {/* Domain Authority Explanation */}
+          <Card className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <BarChart3 className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">Understanding Domain Authority (DA)</h4>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                    Domain Authority is a metric developed by Moz that predicts how well a website will rank on search engines. 
+                    It's scored on a scale from 1 to 100, with higher scores indicating stronger authority and better ranking potential.
+                  </p>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>DA Score Guide:</strong> 1-30 (Weak) • 31-50 (Medium) • 51-70 (Strong) • 71-100 (Very Strong)
+                  </div>
+                </div>
               </div>
-            </Card>
-          )}
+            </CardContent>
+          </Card>
 
           {/* Competitive Landscape Analysis Results */}
           {showAnalysisResults && (

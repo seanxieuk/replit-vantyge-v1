@@ -135,6 +135,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get company domain authority analysis
+  app.get('/api/company-analysis', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(400).json({ message: "Company not found" });
+      }
+
+      if (!company.website) {
+        return res.status(400).json({ message: "Company website not provided" });
+      }
+
+      // Use Moz API to analyze company's domain
+      const mozAnalysis = await mozApi.analyzeCompetitor(company.website);
+      
+      res.json({
+        id: `company-${company.id}`,
+        competitorId: null, // This is for the company itself
+        companyId: company.id,
+        domainAuthority: mozAnalysis.domainAuthority,
+        pageAuthority: mozAnalysis.pageAuthority,
+        spamScore: mozAnalysis.spamScore,
+        linkingDomains: mozAnalysis.linkingDomains,
+        totalLinks: mozAnalysis.totalLinks,
+        seoStrength: mozAnalysis.seoStrength,
+        insights: `Domain analysis for ${company.name}`,
+        recommendations: `Based on the domain authority of ${mozAnalysis.domainAuthority}, consider focusing on link building and content strategy.`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error analyzing company domain:", error);
+      res.status(500).json({ message: "Failed to analyze company domain" });
+    }
+  });
+
   // Competitor routes
   app.get('/api/competitors', isAuthenticated, async (req: any, res) => {
     try {
