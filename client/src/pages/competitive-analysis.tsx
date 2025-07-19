@@ -413,7 +413,6 @@ export default function CompetitiveAnalysisPage() {
         title="Competitive Analysis" 
         subtitle="Track competitors and analyze their strengths, weaknesses, and market positioning" 
       />
-
       <main className="flex-1 overflow-y-auto p-6">
         <div className="max-w-[1028px] mx-auto space-y-6">
           {/* Analysis Buttons */}
@@ -549,10 +548,7 @@ export default function CompetitiveAnalysisPage() {
                 <BarChart3 className="h-5 w-5 text-blue-600 mt-0.5" />
                 <div>
                   <h4 className="font-medium text-gray-900 dark:text-white mb-2">Understanding Domain Authority (DA)</h4>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    Domain Authority is a metric developed by Moz that predicts how well a website will rank on search engines. 
-                    It's scored on a scale from 1 to 100, with higher scores indicating stronger authority and better ranking potential.
-                  </p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Domain Authority (DA) is a 1–100 score that estimates a website’s online reputation and credibility—higher scores indicate greater trust and influence. Originally designed to predict Google rankings, it’s now widely used to compare how reputable company websites are across the internet.</p>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     <strong>DA Score Guide:</strong> 1-30 (Weak) • 31-50 (Medium) • 51-70 (Strong) • 71-100 (Very Strong)
                   </div>
