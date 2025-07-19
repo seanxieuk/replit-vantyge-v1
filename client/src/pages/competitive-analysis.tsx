@@ -29,7 +29,8 @@ import {
   Shield,
   FileText,
   Link as LinkIcon,
-  Loader2
+  Loader2,
+  Building2
 } from "lucide-react";
 import type { Competitor, InsertCompetitor, CompetitiveAnalysis } from "@shared/schema";
 import { useBackgroundAnalysis } from "@/hooks/useBackgroundAnalysis";
@@ -59,93 +60,41 @@ function MyCompanyCard({
   company: any;
   analysis?: CompetitiveAnalysis;
 }) {
+  const domain = company.website || company.domain || 'No website';
+  const daScore = analysis?.domainAuthority;
+  const previewText = company.description 
+    ? company.description.split(' ').slice(0, 6).join(' ') + '...'
+    : 'AI-powered marketing platform';
+  
   return (
-    <Card className="relative border-2 border-green-500 bg-green-50 dark:bg-green-950">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Target className="h-5 w-5 text-green-600" />
-              {company.name}
-              <Badge className="ml-2" style={{ backgroundColor: '#409452', color: 'white' }}>
-                My Company
-              </Badge>
-            </CardTitle>
-            {company.website && (
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-sm text-gray-500">{company.website}</p>
-                {analysis?.domainAuthority !== undefined && (
-                  <Badge variant="outline" className="text-xs">
-                    DA: {analysis.domainAuthority}
-                  </Badge>
-                )}
+    <Card className="border-2 border-green-500 bg-green-50 dark:bg-green-950">
+      <CardContent className="pt-4 pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center shrink-0">
+              <Building2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-medium text-gray-900 dark:text-white text-sm truncate">{company.name}</h3>
+                <Badge className="text-xs shrink-0" style={{ backgroundColor: '#409452', color: 'white' }}>
+                  My Company
+                </Badge>
               </div>
-            )}
+              <p className="text-xs text-gray-600 dark:text-gray-400 truncate mb-1">
+                {previewText}
+              </p>
+              <p className="text-xs text-gray-500 truncate">{domain}</p>
+            </div>
+          </div>
+          
+          <div className="text-right shrink-0 ml-3">
+            <div className="text-lg font-bold text-green-600 dark:text-green-400">
+              {daScore !== undefined ? daScore : '--'}
+            </div>
+            <div className="text-xs text-gray-500">DA</div>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        {company.description && (
-          <p className="text-sm text-gray-600 mb-4">{company.description}</p>
-        )}
-        
-        {analysis && (
-          <div className="space-y-4">
-            <Separator />
-            
-            {/* SEO Strength */}
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium">SEO Strength:</span>
-              <Badge variant={analysis.seoStrength === 'Strong' || analysis.seoStrength === 'Very Strong' ? 'default' : 'secondary'}>
-                {analysis.seoStrength || 'Unknown'}
-              </Badge>
-            </div>
-            
-            {/* SEO Metrics */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              {analysis.domainAuthority !== undefined && (
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium">Domain Authority:</span>
-                  <span className="text-sm font-bold">{analysis.domainAuthority}/100</span>
-                </div>
-              )}
-              
-              {analysis.pageAuthority !== undefined && (
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium">Page Authority:</span>
-                  <span className="text-sm font-bold">{analysis.pageAuthority}/100</span>
-                </div>
-              )}
-              
-              {analysis.spamScore !== undefined && (
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
-                  <span className="text-sm font-medium">Spam Score:</span>
-                  <span className="text-sm font-bold">{analysis.spamScore}/100</span>
-                </div>
-              )}
-              
-              {analysis.linkingDomains !== undefined && (
-                <div className="flex items-center gap-2">
-                  <LinkIcon className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm font-medium">Linking Domains:</span>
-                  <span className="text-sm font-bold">{analysis.linkingDomains.toLocaleString()}</span>
-                </div>
-              )}
-            </div>
-            
-            {/* Insights */}
-            {analysis.insights && (
-              <div>
-                <h4 className="font-medium text-gray-900 mb-2">Key Insights:</h4>
-                <p className="text-sm text-gray-600">{analysis.insights}</p>
-              </div>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   );
@@ -162,36 +111,41 @@ function CompetitorCard({
   analysis?: CompetitiveAnalysis;
   onAnalyze?: () => void;
 }) {
+  const domain = competitor.website || 'No website';
+  const daScore = analysis?.domainAuthority;
+  const previewText = competitor.description 
+    ? competitor.description.split(' ').slice(0, 6).join(' ') + '...'
+    : 'Competitive analysis target';
+  
   return (
     <Card className="relative">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Globe className="h-5 w-5 text-blue-600" />
-              {competitor.name}
-            </CardTitle>
-            {competitor.website && (
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-sm text-gray-500">{competitor.website}</p>
-                {analysis?.domainAuthority !== undefined && (
-                  <Badge variant="outline" className="text-xs">
-                    DA: {analysis.domainAuthority}
-                  </Badge>
-                )}
-              </div>
-            )}
+      <CardContent className="pt-4 pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center shrink-0">
+              <Globe className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-medium text-gray-900 dark:text-white text-sm truncate mb-1">{competitor.name}</h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400 truncate mb-1">
+                {previewText}
+              </p>
+              <p className="text-xs text-gray-500 truncate">{domain}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            {!analysis && onAnalyze && (
-              <Button variant="outline" size="sm" onClick={onAnalyze}>
-                <BarChart3 className="h-4 w-4" />
-              </Button>
-            )}
+          
+          <div className="flex items-center gap-2 shrink-0 ml-3">
+            <div className="text-right">
+              <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                {daScore !== undefined ? daScore : '--'}
+              </div>
+              <div className="text-xs text-gray-500">DA</div>
+            </div>
+            
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Trash2 className="h-4 w-4" />
+                <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                  <Trash2 className="h-3 w-3" />
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -209,105 +163,6 @@ function CompetitorCard({
             </AlertDialog>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        {competitor.description && (
-          <p className="text-sm text-gray-600 mb-4">{competitor.description}</p>
-        )}
-        
-        {analysis && (
-          <div className="space-y-4">
-            <Separator />
-            
-            {/* SEO Strength */}
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium">SEO Strength:</span>
-              <Badge variant={analysis.seoStrength === 'Strong' ? 'default' : 'secondary'}>
-                {analysis.seoStrength || 'Unknown'}
-              </Badge>
-            </div>
-            
-            {/* SEO Metrics */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              {analysis.domainAuthority !== undefined && (
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium">Domain Authority:</span>
-                  <span className="text-sm font-bold">{analysis.domainAuthority}/100</span>
-                </div>
-              )}
-              
-              {analysis.pageAuthority !== undefined && (
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium">Page Authority:</span>
-                  <span className="text-sm font-bold">{analysis.pageAuthority}/100</span>
-                </div>
-              )}
-              
-              {analysis.spamScore !== undefined && (
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
-                  <span className="text-sm font-medium">Spam Score:</span>
-                  <span className="text-sm font-bold">{analysis.spamScore}/100</span>
-                </div>
-              )}
-              
-              {analysis.linkingDomains !== undefined && (
-                <div className="flex items-center gap-2">
-                  <LinkIcon className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm font-medium">Linking Domains:</span>
-                  <span className="text-sm font-bold">{analysis.linkingDomains.toLocaleString()}</span>
-                </div>
-              )}
-            </div>
-            
-            {/* Insights */}
-            {analysis.insights && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Lightbulb className="h-4 w-4 text-yellow-600" />
-                  <span className="text-sm font-medium">Key Insights:</span>
-                </div>
-                <p className="text-sm text-gray-600 pl-6">{analysis.insights}</p>
-              </div>
-            )}
-            
-            {/* Opportunities */}
-            {analysis.opportunities && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium">Opportunities:</span>
-                </div>
-                <p className="text-sm text-gray-600 pl-6">{analysis.opportunities}</p>
-              </div>
-            )}
-            
-            {/* Threats */}
-            {analysis.threats && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
-                  <span className="text-sm font-medium">Threats:</span>
-                </div>
-                <p className="text-sm text-gray-600 pl-6">{analysis.threats}</p>
-              </div>
-            )}
-            
-            {/* Recommendations */}
-            {analysis.recommendations && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Target className="h-4 w-4 text-indigo-600" />
-                  <span className="text-sm font-medium">Recommendations:</span>
-                </div>
-                <p className="text-sm text-gray-600 pl-6">{analysis.recommendations}</p>
-              </div>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   );
