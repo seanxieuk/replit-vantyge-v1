@@ -427,14 +427,48 @@ export default function CompetitiveAnalysisPage() {
 
 
 
+  const analyzeDomainAuthorityMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/domain-authority/analyze-all", {});
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Domain Authority Analysis Complete", 
+        description: `Successfully analyzed ${data.length} domains with DA scores`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/competitive-analyses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/company-analysis"] });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      
+      const errorMessage = error.message || "Failed to analyze domain authority";
+      toast({
+        title: "Analysis Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
   const analyzeAllMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("POST", "/api/competitive-analyses/analyze-all", {});
     },
     onSuccess: (data) => {
       toast({
-        title: "Analysis Complete", 
-        description: `Successfully analyzed ${data.length} competitors with Domain Authority scores`,
+        title: "Competitive Analysis Complete", 
+        description: `Successfully analyzed ${data.length} competitors with full insights`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/competitive-analyses"] });
       queryClient.invalidateQueries({ queryKey: ["/api/company-analysis"] });
@@ -531,10 +565,10 @@ export default function CompetitiveAnalysisPage() {
           <div className="flex justify-end gap-2">
             <Button
               variant="outline"
-              onClick={() => analyzeAllMutation.mutate()}
-              disabled={!competitors?.length || analyzeAllMutation.isPending}
+              onClick={() => analyzeDomainAuthorityMutation.mutate()}
+              disabled={analyzeDomainAuthorityMutation.isPending}
             >
-              {analyzeAllMutation.isPending ? (
+              {analyzeDomainAuthorityMutation.isPending ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
                   Analyzing DA...

@@ -312,21 +312,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       for (const competitor of competitors) {
         // Check if competitor.id is valid
-        if (!competitor.id || isNaN(competitor.id)) {
-          console.error(`Invalid competitor ID: ${competitor.id}`);
+        console.log(`Processing competitor:`, competitor);
+        if (!competitor.id || (typeof competitor.id !== 'number' && isNaN(Number(competitor.id)))) {
+          console.error(`Invalid competitor ID: ${competitor.id}, type: ${typeof competitor.id}`);
           continue;
         }
         
         try {
-          // Get real SEO data from Moz API
-          const mozData = await mozApi.analyzeCompetitor(competitor.website || '');
+          // Get real SEO data from Moz API (with fallback)
+          const mozData = await mozApi.analyzeCompetitor(competitor.website || competitor.name || '');
           
           // Generate AI insights using OpenAI with company context
           const aiInsights = await analyzeCompetitor(competitor.name, competitor.website || '', mozData, company);
           
           const analysis = await storage.createCompetitiveAnalysis({
             companyId: company.id,
-            competitorId: competitor.id,
+            competitorId: Number(competitor.id),
             domainAuthority: mozData.domainAuthority,
             pageAuthority: mozData.pageAuthority,
             spamScore: mozData.spamScore,
@@ -721,6 +722,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error analyzing competitive landscape:", error);
       res.status(500).json({ message: "Failed to analyze competitive landscape" });
+    }
+  });
+
+  // Simple Domain Authority analysis endpoint (without full competitive analysis)
+  app.post('/api/domain-authority/analyze-all', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const company = await storage.getCompanyByUserId(userId);
+      
+      if (!company) {
+        return res.status(400).json({ message: "Company profile not found. Please complete your company setup first." });
+      }
+
+      const competitors = await storage.getCompetitorsByCompanyId(company.id);
+      const results = [];
+      
+      // Analyze company domain
+      if (company.website || company.domain) {
+        try {
+          const companyDomain = company.website || company.domain;
+          const mozData = await mozApi.analyzeCompetitor(companyDomain);
+          results.push({
+            type: 'company',
+            name: company.name,
+            domain: companyDomain,
+            domainAuthority: mozData.domainAuthority,
+            seoStrength: mozData.seoStrength
+          });
+        } catch (error) {
+          console.error(`Error analyzing company domain:`, error);
+        }
+      }
+      
+      // Analyze competitor domains
+      if (competitors && competitors.length > 0) {
+        for (const competitor of competitors) {
+          try {
+            const domain = competitor.website || competitor.name;
+            const mozData = await mozApi.analyzeCompetitor(domain);
+            results.push({
+              type: 'competitor',
+              id: competitor.id,
+              name: competitor.name,
+              domain: domain,
+              domainAuthority: mozData.domainAuthority,
+              seoStrength: mozData.seoStrength
+            });
+          } catch (error) {
+            console.error(`Error analyzing competitor ${competitor.name}:`, error);
+          }
+        }
+      }
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Error analyzing domain authority:", error);
+      res.status(500).json({ message: "Failed to analyze domain authority" });
     }
   });
 
